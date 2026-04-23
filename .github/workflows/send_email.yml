@@ -1,0 +1,28 @@
+name: 주간 교육 뉴스 브리핑 발송
+
+on:
+  schedule:
+    - cron: '0 23 * * 0'  # 매주 일요일 23:00 UTC = 월요일 08:00 KST
+  workflow_dispatch:        # 수동 실행 버튼 (테스트용)
+
+jobs:
+  send-email:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repository 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 교육 뉴스 브리핑 이메일 발송
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.GMAIL_USER }}
+          password: ${{ secrets.GMAIL_PASS }}
+          subject: "📚 주간 교육 뉴스 브리핑 - ${{ github.run_number }}호"
+          to: dongacontents@gmail.com
+          from: "교육 뉴스 브리핑 <dongacontents@gmail.com>"
+          html_body: file://education_news_brief_v4.html
+          convert_markdown: false
