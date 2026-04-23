@@ -13,6 +13,17 @@ jobs:
       - name: Repository 체크아웃
         uses: actions/checkout@v4
 
+      - name: Python 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 필요 패키지 설치
+        run: pip install beautifulsoup4
+
+      - name: 이메일 HTML 생성
+        run: python generate_email.py
+
       - name: 교육 뉴스 브리핑 이메일 발송
         uses: dawidd6/action-send-mail@v3
         with:
@@ -21,8 +32,8 @@ jobs:
           secure: true
           username: ${{ secrets.GMAIL_USER }}
           password: ${{ secrets.GMAIL_PASS }}
-          subject: "📚 주간 교육 뉴스 브리핑 - ${{ github.run_number }}호"
+          subject: "📚 주간 교육 뉴스 브리핑"
           to: dongacontents@gmail.com
           from: "교육 뉴스 브리핑 <dongacontents@gmail.com>"
-          html_body: file://education_news_brief_v4.html
+          html_body: file://email_newsletter.html
           convert_markdown: false
