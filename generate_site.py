@@ -44,7 +44,7 @@ body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background
 .week-badge { background:#1e40af; color:#fff; font-size:12px; font-weight:700; padding:4px 13px; border-radius:12px; white-space:nowrap; }
 .week-date { font-size:12px; color:#aaa; }
 .week-line { flex:1; height:1px; background:#e5e7ef; }
-.card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:12px; }
+.card-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
 .news-card { background:#fff; border-radius:12px; border:.5px solid #dde1ea; padding:15px 16px 13px; display:flex; flex-direction:column; gap:7px; transition:box-shadow .18s,border-color .18s; }
 .news-card:hover { border-color:#c0c7dc; box-shadow:0 3px 14px rgba(30,64,175,.06); }
 .news-card.hidden { display:none; }
@@ -105,6 +105,18 @@ body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background
 .btn-modal-translate:hover { background:#fde68a; }
 .btn-modal-translate:disabled { background:#f1f5f9; color:#94a3b8; cursor:default; }
 .modal-footer { margin-top:20px; display:flex; justify-content:flex-end; gap:8px; }
+.month-dropdown-wrap { position:relative; }
+.month-dropdown-btn { padding:6px 14px; border-radius:18px; border:1.5px solid #dde1ea; background:#fff; color:#555; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; display:inline-flex; align-items:center; gap:5px; }
+.month-dropdown-btn:hover { background:#f5f6fb; border-color:#bbbfce; }
+.month-dropdown-btn.active { background:#1e40af; border-color:#1e40af; color:#fff; }
+.month-dropdown-btn .arrow { font-size:9px; transition:transform .2s; }
+.month-dropdown-btn.open .arrow { transform:rotate(180deg); }
+.month-sub-panel { display:none; position:absolute; top:calc(100% + 6px); left:0; background:#fff; border:.5px solid #dde1ea; border-radius:10px; padding:10px 12px; z-index:100; min-width:120px; box-shadow:0 8px 24px rgba(0,0,0,.10); }
+.month-sub-panel.open { display:block; }
+.month-sub-grid { display:flex; flex-direction:column; gap:5px; }
+.month-sub-btn { padding:5px 10px; border-radius:14px; border:1px solid #e5e7ef; background:#f8fafc; color:#555; font-size:11px; font-weight:600; cursor:pointer; text-align:left; transition:all .15s; white-space:nowrap; }
+.month-sub-btn:hover { background:#eff6ff; border-color:#93c5fd; color:#1d4ed8; }
+.month-sub-btn.active { background:#1e40af; border-color:#1e40af; color:#fff; }
 </style>
 </head>'''
 
@@ -130,11 +142,36 @@ MODAL_HTML = '''<!-- 간략보기 모달 -->
 </div>'''
 
 JS_FUNCTIONS = '''
-let activeWeek = 'all', activeEdu = 'all';
+let activeMonth = 'all', activeWeek = 'all', activeEdu = 'all';
 
-function filterWeek(w, el) {
- activeWeek = w;
- document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+function filterAllWeeks(el) {
+ activeMonth = 'all';
+ activeWeek = 'all';
+ document.querySelectorAll('.week-all-btn').forEach(b => b.classList.add('active'));
+ document.querySelectorAll('.month-dropdown-btn').forEach(b => { b.classList.remove('active'); b.classList.remove('open'); });
+ document.querySelectorAll('.month-sub-panel').forEach(p => p.classList.remove('open'));
+ document.querySelectorAll('.month-sub-btn').forEach(b => b.classList.remove('active'));
+ applyFilter();
+}
+
+function toggleMonthPanel(month, btn) {
+ const panel = document.getElementById('month-sub-' + month);
+ const isOpen = panel.classList.contains('open');
+ document.querySelectorAll('.month-sub-panel').forEach(p => p.classList.remove('open'));
+ document.querySelectorAll('.month-dropdown-btn').forEach(b => b.classList.remove('open'));
+ if (!isOpen) { panel.classList.add('open'); btn.classList.add('open'); }
+ activeMonth = month;
+ activeWeek = 'all';
+ document.querySelectorAll('.week-all-btn').forEach(b => b.classList.remove('active'));
+ document.querySelectorAll('.month-dropdown-btn').forEach(b => b.classList.remove('active'));
+ document.querySelectorAll('.month-sub-btn').forEach(b => b.classList.remove('active'));
+ btn.classList.add('active');
+ applyFilter();
+}
+
+function filterMonthSub(weekId, el) {
+ activeWeek = weekId;
+ document.querySelectorAll('.month-sub-btn').forEach(b => b.classList.remove('active'));
  el.classList.add('active');
  applyFilter();
 }
@@ -170,8 +207,14 @@ function toggleEduPanel(btn) {
 }
 
 document.addEventListener('click', function(e) {
- const wrap = document.querySelector('.edu-dropdown-wrap');
- if (wrap && !wrap.contains(e.target)) {
+ document.querySelectorAll('.month-dropdown-wrap').forEach(wrap => {
+   if (!wrap.contains(e.target)) {
+     wrap.querySelector('.month-sub-panel').classList.remove('open');
+     wrap.querySelector('.month-dropdown-btn').classList.remove('open');
+   }
+ });
+ const eduWrap = document.querySelector('.edu-dropdown-wrap');
+ if (eduWrap && !eduWrap.contains(e.target)) {
    document.getElementById('edu-sub-panel').classList.remove('open');
    document.getElementById('edu-drop-btn').classList.remove('open');
  }
@@ -179,15 +222,16 @@ document.addEventListener('click', function(e) {
 
 function applyFilter() {
  document.querySelectorAll('.week-section').forEach(sec => {
+   const mMatch = activeMonth === 'all' || sec.dataset.month === activeMonth;
    const wMatch = activeWeek === 'all' || sec.dataset.week === activeWeek;
    let visible = 0;
    sec.querySelectorAll('.news-card').forEach(card => {
      const eMatch = activeEdu === 'all' || card.dataset.edu === activeEdu;
-     const show = wMatch && eMatch;
+     const show = mMatch && wMatch && eMatch;
      card.classList.toggle('hidden', !show);
      if (show) visible++;
    });
-   sec.style.display = (wMatch && visible > 0) ? '' : 'none';
+   sec.style.display = (mMatch && wMatch && visible > 0) ? '' : 'none';
  });
 }
 
@@ -271,10 +315,31 @@ EDU_SUB_BUTTONS = [
 # ── 동적 HTML 생성 함수 ─────────────────────────────────────
 
 def build_week_filter_buttons(weeks):
-    btns = ''
+    from collections import OrderedDict
+    months = OrderedDict()
     for w in weeks:
-        btns += f'<button class="filter-btn" onclick="filterWeek(\'{w["id"]}\',this)">{escape(w["badge"].replace("차", ""))}</button>'
-    return btns
+        parts = w['badge'].split()
+        month = parts[0]
+        week_label = parts[1].replace('주차', '주')
+        if month not in months:
+            months[month] = []
+        months[month].append({'id': w['id'], 'label': week_label})
+
+    html = ''
+    for month, sub_weeks in months.items():
+        sub_btns = ''.join(
+            f'<button class="month-sub-btn" onclick="filterMonthSub(\'{sw["id"]}\',this)">{escape(sw["label"])}</button>'
+            for sw in sub_weeks
+        )
+        html += (
+            f'<div class="month-dropdown-wrap">'
+            f'<button class="month-dropdown-btn" onclick="toggleMonthPanel(\'{month}\',this)">'
+            f'{escape(month)} <span class="arrow">▼</span></button>'
+            f'<div class="month-sub-panel" id="month-sub-{month}">'
+            f'<div class="month-sub-grid">{sub_btns}</div>'
+            f'</div></div>'
+        )
+    return html
 
 
 def build_week_sections(weeks, all_cards):
@@ -317,9 +382,10 @@ def build_week_sections(weeks, all_cards):
                 f'</div></div>'
             )
 
+        month = w['badge'].split()[0]
         html += (
             f'<!-- ===== {w["badge"]} ===== -->\n'
-            f'<div class="week-section" data-week="{w["id"]}">\n'
+            f'<div class="week-section" data-week="{w["id"]}" data-month="{month}">\n'
             f'<div class="week-header">'
             f'<span class="week-badge">{escape(w["badge"])}</span>'
             f'<span class="week-date">{escape(w["date"])}</span>'
@@ -362,7 +428,7 @@ def main():
         '<div class="filter-wrap">\n'
         '<div class="filter-row">\n'
         '<span class="filter-label">주차</span>\n'
-        '<button class="filter-btn active" onclick="filterWeek(\'all\',this)">전체</button>\n'
+        '<button class="filter-btn week-all-btn active" onclick="filterAllWeeks(this)">전체</button>\n'
         + week_filter_btns + '\n'
         '</div>\n'
         '<div class="filter-row" id="edu-row">\n'
