@@ -4,14 +4,25 @@ on:
   push:
     branches: [main]
     paths:
-      - 'data/weeks.json'   # 뉴스 데이터 변경 시 자동 실행
-  workflow_dispatch:         # 수동 실행 버튼
+      - 'data/weeks.json'
+      - 'generate_site.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write        # HTML 파일 커밋을 위해 필요
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Repository 체크아웃
@@ -28,12 +39,19 @@ jobs:
       - name: HTML 사이트 생성
         run: python generate_site.py
 
-      - name: 변경사항 커밋 & 푸시
+      - name: 배포 파일 준비
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add education_news_brief_v4.html
-          git diff --staged --quiet && echo "변경 없음" || (
-            git commit -m "auto: 주간 뉴스 사이트 업데이트"
-            git push
-          )
+          mkdir -p _site
+          cp index.html _site/
+
+      - name: GitHub Pages 설정
+        uses: actions/configure-pages@v4
+
+      - name: Pages 아티팩트 업로드
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+      - name: GitHub Pages 배포
+        id: deployment
+        uses: actions/deploy-pages@v4
