@@ -8,14 +8,15 @@
 
 import os, json, re, sys
 import requests
+import google.generativeai as genai
 from pathlib import Path
 from datetime import date, timedelta
-from anthropic import Anthropic
 
 # ── 환경변수 ─────────────────────────────────────────────
 NAVER_ID     = os.environ['NAVER_CLIENT_ID']
 NAVER_SECRET = os.environ['NAVER_CLIENT_SECRET']
-client = Anthropic(api_key=os.environ['ANTHROPIC_API_KEY'])
+genai.configure(api_key=os.environ['GEMINI_API_KEY'])
+gemini = genai.GenerativeModel('gemini-1.5-flash')
 
 # ── 검색 쿼리 정의 ────────────────────────────────────────
 # (query, edu 분류 힌트)
@@ -123,14 +124,14 @@ def claude_card(title: str, desc: str, url: str, edu_hint: str) -> dict | None:
         edu_hint=edu_hint or "없음(자동 분류)",
     )
     try:
-        msg = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=800,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        return json.loads(msg.content[0].text.strip())
+        response = gemini.generate_content(prompt)
+        text = response.text.strip()
+        # ```json ... ``` 블록 제거
+        text = re.sub(r'^```json\s*', '', text)
+        text = re.sub(r'\s*```$', '', text)
+        return json.loads(text)
     except Exception as e:
-        print(f"  Claude 오류: {e}")
+        print(f"  Gemini 오류: {e}")
         return None
 
 # ── 메인 ─────────────────────────────────────────────────
