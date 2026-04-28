@@ -1,4 +1,5 @@
 *.html
+!education_news_brief_v4.html
 __pycache__/
 *.py[cod]
 .env
