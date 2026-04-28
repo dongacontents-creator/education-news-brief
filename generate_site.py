@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""data/weeks.json → education_news_brief_v4.html 자동 생성"""
+"""data/weeks.json → index.html 자동 생성"""
 
 import json
 from pathlib import Path
@@ -389,7 +389,7 @@ def main():
         '</html>'
     )
 
-    Path('education_news_brief_v4.html').write_text(html, encoding='utf-8')
+    Path('index.html').write_text(html, encoding='utf-8')
     print(f'생성 완료: {len(weeks)}개 주차, {len(all_cards)}개 카드')
 
 
