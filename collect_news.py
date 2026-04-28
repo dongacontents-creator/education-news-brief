@@ -2,30 +2,28 @@
 """
 매주 월요일 자동 실행:
 1. 네이버 뉴스 API로 교육 뉴스 수집
-2. Claude API로 요약 / 인사이트 / 포인트 생성
+2. Gemini API로 요약 / 인사이트 / 포인트 생성
 3. data/weeks.json에 새 주차 자동 추가
 """
 
 import os, json, re, sys
 import requests
-import google.generativeai as genai
+from google import genai
 from pathlib import Path
 from datetime import date, timedelta
 
 # ── 환경변수 ─────────────────────────────────────────────
 NAVER_ID     = os.environ['NAVER_CLIENT_ID']
 NAVER_SECRET = os.environ['NAVER_CLIENT_SECRET']
-genai.configure(api_key=os.environ['GEMINI_API_KEY'])
-gemini = genai.GenerativeModel('gemini-1.5-flash')
+client = genai.Client(api_key=os.environ['GEMINI_API_KEY'])
 
 # ── 검색 쿼리 정의 ────────────────────────────────────────
-# (query, edu 분류 힌트)
 QUERIES = [
     ("교육부 교육정책",           "교육부"),
     ("교육부 AI 디지털교육",      "교육부"),
     ("서울교육청",                "서울특별시교육청"),
     ("경기도교육청",              "경기도교육청"),
-    ("교육청 AI 에듀테크",        None),          # Claude가 분류
+    ("교육청 AI 에듀테크",        None),
     ("에듀테크 교육 스타트업",    "업계동향"),
     ("AI 교과서 디지털교육",      "업계동향"),
 ]
@@ -53,7 +51,6 @@ EDU_TAGS = {
     "기타":                 "tag-edu-기타",
 }
 
-# ── 유틸 ─────────────────────────────────────────────────
 def strip_tags(html: str) -> str:
     return re.sub(r'<[^>]+>', '', html).strip()
 
@@ -67,7 +64,6 @@ def week_info():
         "badge": f"{mon.month}월 {wom}주차",
     }
 
-# ── 네이버 뉴스 검색 ──────────────────────────────────────
 def naver_search(query: str, display: int = 5) -> list:
     resp = requests.get(
         "https://openapi.naver.com/v1/search/news.json",
@@ -81,7 +77,6 @@ def naver_search(query: str, display: int = 5) -> list:
     resp.raise_for_status()
     return resp.json().get("items", [])
 
-# ── Claude 카드 생성 ──────────────────────────────────────
 CARD_PROMPT = """\
 다음 교육 뉴스 기사를 분석해 JSON으로 정리하세요.
 
@@ -118,15 +113,17 @@ JSON만 출력 (```json 불필요):
   "keywords": ["...", "..."]
 }}"""
 
-def claude_card(title: str, desc: str, url: str, edu_hint: str) -> dict | None:
+def gemini_card(title: str, desc: str, url: str, edu_hint: str) -> dict | None:
     prompt = CARD_PROMPT.format(
         title=title, desc=desc, url=url,
         edu_hint=edu_hint or "없음(자동 분류)",
     )
     try:
-        response = gemini.generate_content(prompt)
+        response = client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt,
+        )
         text = response.text.strip()
-        # ```json ... ``` 블록 제거
         text = re.sub(r'^```json\s*', '', text)
         text = re.sub(r'\s*```$', '', text)
         return json.loads(text)
@@ -134,19 +131,16 @@ def claude_card(title: str, desc: str, url: str, edu_hint: str) -> dict | None:
         print(f"  Gemini 오류: {e}")
         return None
 
-# ── 메인 ─────────────────────────────────────────────────
 def main():
     data_path = Path("data/weeks.json")
     data = json.loads(data_path.read_text(encoding="utf-8"))
 
-    # 이미 수집된 URL 추적 (중복 방지)
     seen_urls = {
         card["url"]
         for w in data["weeks"]
         for card in w["cards"]
     }
 
-    # 다음 주차 ID
     last_num = max(int(w["id"][1:]) for w in data["weeks"])
     new_id   = f"w{last_num + 1}"
     info     = week_info()
@@ -174,7 +168,7 @@ def main():
             seen_urls.add(url)
 
             print(f"    처리: {title[:40]}...")
-            result = claude_card(title, desc, url, edu_hint)
+            result = gemini_card(title, desc, url, edu_hint)
             if not result or not result.get("relevant"):
                 print("    → 관련 없음, 스킵")
                 continue
@@ -188,11 +182,9 @@ def main():
             if result.get("topic"):
                 tags.append({"class": "tag-topic", "text": result["topic"]})
 
-            # 날짜 파싱
             pub = art.get("pubDate", "")
             try:
                 from email.utils import parsedate
-                import time
                 t = parsedate(pub)
                 pub_str = f"{t[0]}.{t[1]:02d}.{t[2]:02d}" if t else ""
             except Exception:
@@ -218,7 +210,6 @@ def main():
         print("수집된 뉴스 없음 — 종료")
         sys.exit(0)
 
-    # 키워드 중복 제거, 최대 3개
     seen_kw  = set()
     kw_final = []
     for kw in keywords:
