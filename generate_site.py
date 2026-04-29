@@ -412,9 +412,10 @@ def main():
     data = json.loads(Path('data/weeks.json').read_text(encoding='utf-8'))
     weeks = data['weeks']
 
-    all_cards = []
-    week_filter_btns = build_week_filter_buttons(weeks)
-    week_sections_html = build_week_sections(weeks, all_cards)
+        all_cards = []
+    weeks_desc = weeks[::-1]
+    week_filter_btns = build_week_filter_buttons(weeks_desc)
+    week_sections_html = build_week_sections(weeks_desc, all_cards)
     edu_sub_panel = build_edu_sub_panel()
     card_data_json = json.dumps(all_cards, ensure_ascii=False)
 
