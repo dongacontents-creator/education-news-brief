@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""data/weeks.json → index.html 자동 생성 (가로 정렬 최적화 버전)"""
+"""
+data/weeks.json → index.html 자동 생성
+- 가로 정렬 최적화 (page-wrap 내부로 섹션 통합)
+- 드롭다운 선택 시 자동 닫힘 로직 추가
+"""
 
 import json
 from pathlib import Path
@@ -17,13 +21,11 @@ HTML_HEAD = '''<!DOCTYPE html>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background:#f0f2f6; color:#1a1a2e; font-size:14px; line-height:1.6; }
 
-/* 핵심 수정: 모든 섹션을 감싸는 중앙 정렬 컨테이너 */
+/* 레이아웃: 모든 섹션의 가로 길이를 통일하는 컨테이너 */
 .page-wrap { max-width:1080px; margin:0 auto; padding:28px 24px 60px; }
 
-/* 각 박스들이 부모 너비에 꽉 차도록 설정 */
 .page-header { background:#fff; border-radius:14px; padding:26px 30px 22px; margin-bottom:20px; border:.5px solid #dde1ea; width: 100%; }
 .page-header h1 { font-size:20px; font-weight:700; color:#1a1a2e; margin-bottom:4px; }
-.page-header p { font-size:13px; color:#888; }
 
 .filter-wrap { background:#fff; border-radius:10px; border:.5px solid #dde1ea; padding:13px 16px; margin-bottom:20px; display:flex; flex-direction:column; gap:9px; width: 100%; }
 .filter-row { display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
@@ -34,16 +36,16 @@ body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background
 .edu-dropdown-btn.active { background:#1e40af; border-color:#1e40af; color:#fff; }
 .edu-dropdown-btn .arrow { font-size:9px; transition:transform .2s; }
 .edu-dropdown-btn.open .arrow { transform:rotate(180deg); }
+
 .edu-sub-panel { display:none; position:absolute; top:calc(100% + 6px); left:0; background:#fff; border:.5px solid #dde1ea; border-radius:10px; padding:10px 12px; z-index:100; min-width:260px; box-shadow:0 8px 24px rgba(0,0,0,.10); }
 .edu-sub-panel.open { display:block; }
 .edu-sub-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
-.edu-sub-btn { padding:5px 10px; border-radius:14px; border:1px solid #e5e7ef; background:#f8fafc; color:#555; font-size:11px; font-weight:600; cursor:pointer; text-align:left; transition:all .15s; white-space:nowrap; }
+.edu-sub-btn { padding:5px 10px; border-radius:14px; border:1px solid #e5e7ef; background:#f8fafc; color:#555; font-size:11px; font-weight:600; cursor:pointer; text-align:left; transition:all .15s; }
 .edu-sub-btn:hover { background:#eff6ff; border-color:#93c5fd; color:#1d4ed8; }
 .edu-sub-btn.active { background:#1e40af; border-color:#1e40af; color:#fff; }
 
 .filter-label { font-size:11px; font-weight:700; color:#aaa; letter-spacing:.04em; white-space:nowrap; margin-right:2px; }
 .filter-btn { padding:6px 14px; border-radius:18px; border:1.5px solid #dde1ea; background:#fff; color:#555; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; }
-.filter-btn:hover { background:#f5f6fb; border-color:#bbbfce; }
 .filter-btn.active { background:#1e40af; border-color:#1e40af; color:#fff; }
 
 .week-section { margin-bottom:30px; width: 100%; }
@@ -52,9 +54,7 @@ body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background
 .week-date { font-size:12px; color:#aaa; }
 .week-line { flex:1; height:1px; background:#e5e7ef; }
 
-/* 그리드 레이아웃 설정 */
 .card-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; width: 100%; }
-
 @media (max-width: 900px) { .card-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 600px) { .card-grid { grid-template-columns: 1fr; } }
 
@@ -64,53 +64,34 @@ body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background
 .card-tags { display:flex; flex-wrap:wrap; gap:5px; }
 .tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 9px; border-radius:8px; white-space:nowrap; }
 .tag-edu-교육부 { background:#eff6ff; color:#1d4ed8; }
-/* ... (교육청별 태그 스타일은 동일하게 유지) ... */
-.tag-edu-서울특별시교육청 { background:#fdf4ff; color:#7e22ce; }
-.tag-edu-경기도교육청 { background:#f0fdf4; color:#15803d; }
 .tag-edu-업계동향 { background:#fefce8; color:#854d0e; border:1px solid #fde047; }
-.filter-btn-industry { padding:6px 14px; border-radius:18px; border:1.5px solid #fde047; background:#fefce8; color:#854d0e; font-size:12px; font-weight:700; cursor:pointer; transition:all .15s; }
-.filter-btn-industry:hover { background:#fef08a; }
+.filter-btn-industry { padding:6px 14px; border-radius:18px; border:1.5px solid #fde047; background:#fefce8; color:#854d0e; font-size:12px; font-weight:700; cursor:pointer; }
 .filter-btn-industry.active { background:#ca8a04; border-color:#ca8a04; color:#fff; }
-.tag-source { background:#f1f5f9; color:#475569; }
-.tag-topic { background:#faf5ff; color:#7c3aed; }
+
 .card-title { font-size:14px; font-weight:700; color:#1a1a2e; line-height:1.4; min-height: 2.8em; }
-.card-meta { font-size:11px; color:#aaa; }
 .card-summary { font-size:13px; color:#444; line-height:1.55; flex:1; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
 .card-insight { font-size:12px; color:#1d4ed8; font-weight:600; padding:5px 10px; background:#eff6ff; border-radius:7px; }
 .card-footer { display:flex; align-items:center; justify-content:flex-end; margin-top:2px; gap:7px; }
-.btn-link { display:inline-block; padding:5px 13px; background:#1e40af; color:#fff; text-decoration:none; border-radius:7px; font-size:12px; font-weight:600; transition:background .15s; }
-.btn-link:hover { background:#1d3a9b; }
-.btn-brief { display:inline-block; padding:5px 13px; background:#f1f5f9; color:#475569; border:none; border-radius:7px; font-size:12px; font-weight:600; cursor:pointer; transition:background .15s; }
-.btn-brief:hover { background:#e2e8f0; }
+.btn-link { display:inline-block; padding:5px 13px; background:#1e40af; color:#fff; text-decoration:none; border-radius:7px; font-size:12px; font-weight:600; }
+.btn-brief { display:inline-block; padding:5px 13px; background:#f1f5f9; color:#475569; border:none; border-radius:7px; font-size:12px; font-weight:600; cursor:pointer; }
 
 .week-keywords { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:13px; }
-.kw { display:inline-flex; align-items:center; gap:4px; padding:5px 14px; border-radius:20px; background:#1e3a8a; color:#bfdbfe; font-size:12px; font-weight:700; letter-spacing:.01em; }
-.kw::before { content:'#'; opacity:.55; font-weight:400; }
+.kw { display:inline-flex; align-items:center; gap:4px; padding:5px 14px; border-radius:20px; background:#1e3a8a; color:#bfdbfe; font-size:12px; font-weight:700; }
+.kw::before { content:'#'; opacity:.55; }
 
-/* 모달 및 기타 스타일 유지... */
 .modal-backdrop { display:none; position:fixed; inset:0; background:rgba(15,23,42,.45); z-index:1000; align-items:center; justify-content:center; padding:20px; }
 .modal-backdrop.open { display:flex; }
-.modal-box { background:#fff; border-radius:16px; width:100%; max-width:520px; padding:28px 28px 24px; position:relative; box-shadow:0 20px 60px rgba(15,23,42,.18); }
-.modal-close { position:absolute; top:14px; right:16px; background:none; border:none; font-size:20px; color:#94a3b8; cursor:pointer; line-height:1; }
-.modal-close:hover { color:#1e40af; }
-.modal-title { font-size:16px; font-weight:700; color:#1a1a2e; line-height:1.4; margin-bottom:12px; }
-.modal-divider { height:1px; background:#e5e7ef; margin-bottom:16px; }
-.modal-points { list-style:none; display:flex; flex-direction:column; gap:10px; }
-.modal-points li { display:flex; gap:10px; font-size:13.5px; color:#334155; line-height:1.55; }
-.modal-points li::before { content:''; display:block; width:6px; height:6px; border-radius:50%; background:#1e40af; margin-top:7px; flex-shrink:0; }
-.modal-insight { margin-top:16px; padding:10px 14px; background:#eff6ff; border-radius:8px; font-size:12px; font-weight:700; color:#1d4ed8; }
+.modal-box { background:#fff; border-radius:16px; width:100%; max-width:520px; padding:28px 28px 24px; position:relative; }
+.modal-close { position:absolute; top:14px; right:16px; background:none; border:none; font-size:20px; color:#94a3b8; cursor:pointer; }
 
 .month-dropdown-wrap { position:relative; }
-.month-dropdown-btn { padding:6px 14px; border-radius:18px; border:1.5px solid #dde1ea; background:#fff; color:#555; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; display:inline-flex; align-items:center; gap:5px; }
-.month-dropdown-btn:hover { background:#f5f6fb; border-color:#bbbfce; }
+.month-dropdown-btn { padding:6px 14px; border-radius:18px; border:1.5px solid #dde1ea; background:#fff; color:#555; font-size:12px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:5px; }
 .month-dropdown-btn.active { background:#1e40af; border-color:#1e40af; color:#fff; }
-.month-dropdown-btn .arrow { font-size:9px; transition:transform .2s; }
 .month-dropdown-btn.open .arrow { transform:rotate(180deg); }
 .month-sub-panel { display:none; position:absolute; top:calc(100% + 6px); left:0; background:#fff; border:.5px solid #dde1ea; border-radius:10px; padding:10px 12px; z-index:100; min-width:120px; box-shadow:0 8px 24px rgba(0,0,0,.10); }
 .month-sub-panel.open { display:block; }
 .month-sub-grid { display:flex; flex-direction:column; gap:5px; }
-.month-sub-btn { padding:5px 10px; border-radius:14px; border:1px solid #e5e7ef; background:#f8fafc; color:#555; font-size:11px; font-weight:600; cursor:pointer; text-align:left; transition:all .15s; white-space:nowrap; }
-.month-sub-btn:hover { background:#eff6ff; border-color:#93c5fd; color:#1d4ed8; }
+.month-sub-btn { padding:5px 10px; border-radius:14px; border:1px solid #e5e7ef; background:#f8fafc; color:#555; font-size:11px; font-weight:600; cursor:pointer; text-align:left; }
 .month-sub-btn.active { background:#1e40af; border-color:#1e40af; color:#fff; }
 </style>
 </head>'''
@@ -118,12 +99,11 @@ body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background
 MODAL_HTML = '''<div class="modal-backdrop" id="modal" onclick="if(event.target===this)closeModal()">
 <div class="modal-box">
 <button class="modal-close" onclick="closeModal()">✕</button>
-<div class="modal-kicker" id="m-kicker"></div>
-<div class="modal-title" id="m-title"></div>
-<div class="modal-divider"></div>
-<ul class="modal-points" id="m-points"></ul>
-<div class="modal-insight" id="m-insight"></div>
-<div class="modal-footer" style="margin-top:20px; display:flex; justify-content:flex-end; gap:8px;">
+<div class="modal-title" id="m-title" style="font-weight:700; font-size:16px; margin-bottom:12px;"></div>
+<div style="height:1px; background:#e5e7ef; margin-bottom:16px;"></div>
+<ul id="m-points" style="list-style:none; display:flex; flex-direction:column; gap:10px; font-size:13.5px; color:#334155;"></ul>
+<div id="m-insight" style="margin-top:16px; padding:10px 14px; background:#eff6ff; border-radius:8px; font-size:12px; font-weight:700; color:#1d4ed8;"></div>
+<div style="margin-top:20px; display:flex; justify-content:flex-end; gap:8px;">
 <button class="btn-brief" onclick="closeModal()">닫기</button>
 <a class="btn-link" href="#" id="m-link" target="_blank">원문보기</a>
 </div>
@@ -136,7 +116,7 @@ let activeMonth = 'all', activeWeek = 'all', activeEdu = 'all';
 function filterAllWeeks(el) {
   activeMonth = 'all'; activeWeek = 'all';
   document.querySelectorAll('.week-all-btn').forEach(b => b.classList.add('active'));
-  document.querySelectorAll('.month-dropdown-btn').forEach(b => { b.classList.remove('active'); b.classList.remove('open'); });
+  document.querySelectorAll('.month-dropdown-btn').forEach(b => { b.classList.remove('active', 'open'); });
   document.querySelectorAll('.month-sub-panel').forEach(p => p.classList.remove('open'));
   document.querySelectorAll('.month-sub-btn').forEach(b => b.classList.remove('active'));
   applyFilter();
@@ -148,10 +128,7 @@ function toggleMonthPanel(month, btn) {
   document.querySelectorAll('.month-sub-panel').forEach(p => p.classList.remove('open'));
   document.querySelectorAll('.month-dropdown-btn').forEach(b => b.classList.remove('open'));
   if (!isOpen) { panel.classList.add('open'); btn.classList.add('open'); }
-  activeMonth = month; activeWeek = 'all';
-  document.querySelectorAll('.week-all-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.month-dropdown-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  activeMonth = month;
   applyFilter();
 }
 
@@ -159,6 +136,9 @@ function filterMonthSub(weekId, el) {
   activeWeek = weekId;
   document.querySelectorAll('.month-sub-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
+  // 선택 시 드롭다운 닫기
+  document.querySelectorAll('.month-sub-panel').forEach(p => p.classList.remove('open'));
+  document.querySelectorAll('.month-dropdown-btn').forEach(b => b.classList.remove('open'));
   applyFilter();
 }
 
@@ -181,14 +161,14 @@ function filterEduSub(edu, el) {
   el.classList.add('active');
   const dropBtn = document.getElementById('edu-drop-btn');
   dropBtn.classList.add('active');
+  // 선택 시 드롭다운 닫기
   document.getElementById('edu-sub-panel').classList.remove('open');
   dropBtn.classList.remove('open');
   applyFilter();
 }
 
 function toggleEduPanel(btn) {
-  const panel = document.getElementById('edu-sub-panel');
-  panel.classList.toggle('open');
+  document.getElementById('edu-sub-panel').classList.toggle('open');
   btn.classList.toggle('open');
 }
 
@@ -211,17 +191,14 @@ function openBrief(el) {
   const card = el.closest('.news-card');
   const idx = parseInt(card.dataset.idx);
   const d = CARD_DATA[idx];
-  if (!d) return;
-  document.getElementById('m-title').textContent = d.title || '';
-  document.getElementById('m-insight').textContent = d.insight || '';
-  document.getElementById('m-link').href = d.url || '#';
-  const ul = document.getElementById('m-points');
-  ul.innerHTML = d.points.map(p => '<li>' + p + '</li>').join('');
+  document.getElementById('m-title').textContent = d.title;
+  document.getElementById('m-insight').textContent = d.insight;
+  document.getElementById('m-link').href = d.url;
+  document.getElementById('m-points').innerHTML = d.points.map(p => '<li>' + p + '</li>').join('');
   document.getElementById('modal').classList.add('open');
 }
 
 function closeModal() { document.getElementById('modal').classList.remove('open'); }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 '''
 
 EDU_SUB_BUTTONS = [
@@ -232,136 +209,74 @@ EDU_SUB_BUTTONS = [
     '제주특별자치도교육청',
 ]
 
-# ── 동적 HTML 생성 함수 ─────────────────────────────────────
-
 def build_week_filter_buttons(weeks):
     from collections import OrderedDict
     months = OrderedDict()
     for w in weeks:
         parts = w['badge'].split()
         month = parts[0]
-        week_label = parts[1].replace('주차', '주')
+        label = parts[1].replace('주차', '주')
         if month not in months: months[month] = []
-        months[month].append({'id': w['id'], 'label': week_label})
-
+        months[month].append({'id': w['id'], 'label': label})
     html = ''
-    for month, sub_weeks in months.items():
-        sub_btns = ''.join(
-            f'<button class="month-sub-btn" onclick="filterMonthSub(\'{sw["id"]}\',this)">{escape(sw["label"])}</button>'
-            for sw in sub_weeks
-        )
-        html += (
-            f'<div class="month-dropdown-wrap">'
-            f'<button class="month-dropdown-btn" onclick="toggleMonthPanel(\'{month}\',this)">'
-            f'{escape(month)} <span class="arrow">▼</span></button>'
-            f'<div class="month-sub-panel" id="month-sub-{month}">'
-            f'<div class="month-sub-grid">{sub_btns}</div>'
-            f'</div></div>'
-        )
+    for m, sws in months.items():
+        sub = ''.join(f'<button class="month-sub-btn" onclick="filterMonthSub(\'{s["id"]}\',this)">{escape(s["label"])}</button>' for s in sws)
+        html += f'<div class="month-dropdown-wrap"><button class="month-dropdown-btn" onclick="toggleMonthPanel(\'{m}\',this)">{escape(m)} <span class="arrow">▼</span></button><div class="month-sub-panel" id="month-sub-{m}"><div class="month-sub-grid">{sub}</div></div></div>'
     return html
 
 def build_week_sections(weeks, all_cards):
     html = ''
     for w in weeks:
-        kw_html = ''.join(f'<span class="kw">{escape(kw)}</span>' for kw in w['keywords'])
-        cards_html = ''
-        for card in w['cards']:
+        kw = ''.join(f'<span class="kw">{escape(k)}</span>' for k in w['keywords'])
+        cards = ''
+        for c in w['cards']:
             idx = len(all_cards)
-            all_cards.append({
-                'title': card['title'],
-                'points': card.get('points', [card['summary']]),
-                'insight': card['insight'],
-                'url': card['url']
-            })
-            tags_html = ''.join(f'<span class="tag {t["class"]}">{escape(t["text"])}</span>' for t in card['tags'])
-            cards_html += (
-                f'<div class="news-card" data-edu="{escape(card["edu"])}" data-idx="{idx}">'
-                f'<div class="card-tags">{tags_html}</div>'
-                f'<div class="card-title">{escape(card["title"])}</div>'
-                f'<div class="card-meta">{escape(card["meta"])}</div>'
-                f'<div class="card-summary">{escape(card["summary"])}</div>'
-                f'<div class="card-insight">{escape(card["insight"])}</div>'
-                f'<div class="card-footer">'
-                f'<button class="btn-brief" onclick="openBrief(this)">간략보기</button>'
-                f'<a class="btn-link" href="{card["url"]}" target="_blank">원문보기</a>'
-                f'</div></div>'
-            )
-        month = w['badge'].split()[0]
-        html += (
-            f'<div class="week-section" data-week="{w["id"]}" data-month="{month}">\n'
-            f'<div class="week-header">'
-            f'<span class="week-badge">{escape(w["badge"])}</span>'
-            f'<span class="week-date">{escape(w["date"])}</span>'
-            f'<div class="week-line"></div>'
-            f'</div>\n'
-            f'<div class="week-keywords">{kw_html}</div>\n'
-            f'<div class="card-grid">{cards_html}</div>\n'
-            f'</div>\n'
-        )
+            all_cards.append({'title': c['title'], 'points': c.get('points', [c['summary']]), 'insight': c['insight'], 'url': c['url']})
+            tags = ''.join(f'<span class="tag {t["class"]}">{escape(t["text"])}</span>' for t in c['tags'])
+            cards += (f'<div class="news-card" data-edu="{escape(c["edu"])}" data-idx="{idx}">'
+                      f'<div class="card-tags">{tags}</div><div class="card-title">{escape(c["title"])}</div>'
+                      f'<div class="card-meta">{escape(c["meta"])}</div><div class="card-summary">{escape(c["summary"])}</div>'
+                      f'<div class="card-insight">{escape(c["insight"])}</div>'
+                      f'<div class="card-footer"><button class="btn-brief" onclick="openBrief(this)">간략보기</button>'
+                      f'<a class="btn-link" href="{c["url"]}" target="_blank">원문보기</a></div></div>')
+        m = w['badge'].split()[0]
+        html += (f'<div class="week-section" data-week="{w["id"]}" data-month="{m}">'
+                 f'<div class="week-header"><span class="week-badge">{escape(w["badge"])}</span>'
+                 f'<span class="week-date">{escape(w["date"])}</span><div class="week-line"></div></div>'
+                 f'<div class="week-keywords">{kw}</div><div class="card-grid">{cards}</div></div>')
     return html
 
-def build_edu_sub_panel():
-    btns = ''.join(f'<button class="edu-sub-btn" onclick="filterEduSub(\'{n}\',this)">{n}</button>' for n in EDU_SUB_BUTTONS)
-    return f'<div class="edu-sub-grid">{btns}</div>'
-
-# ── 메인 ────────────────────────────────────────────────────
-
 def main():
-    # 데이터 로드 (실제 경로에 맞게 수정)
     try:
         data = json.loads(Path('data/weeks.json').read_text(encoding='utf-8'))
-    except FileNotFoundError:
-        print("에러: data/weeks.json 파일을 찾을 수 없습니다.")
+    except:
+        print("data/weeks.json 파일 확인 필요")
         return
 
-    weeks = data['weeks']
+    weeks_desc = data['weeks'][::-1]
     all_cards = []
-    weeks_desc = weeks[::-1] # 최신순
     
-    week_filter_btns = build_week_filter_buttons(weeks_desc)
-    week_sections_html = build_week_sections(weeks_desc, all_cards)
-    edu_sub_panel = build_edu_sub_panel()
-    card_data_json = json.dumps(all_cards, ensure_ascii=False)
-
-    html = (
-        HTML_HEAD + '\n'
-        '<body>\n'
-        '<div class="page-wrap">\n' # 가로 너비를 제한하는 컨테이너 시작
-        '  <div class="page-header">\n'
-        '    <h1>📰 교육 뉴스 브리핑</h1>\n'
-        '  </div>\n'
-        '  <div class="filter-wrap">\n'
-        '    <div class="filter-row">\n'
-        '      <span class="filter-label">주차</span>\n'
-        '      <button class="filter-btn week-all-btn active" onclick="filterAllWeeks(this)">전체</button>\n'
-        + week_filter_btns + '\n'
-        '    </div>\n'
-        '    <div class="filter-row" id="edu-row">\n'
-        '      <span class="filter-label">선택</span>\n'
-        '      <button class="filter-btn active" id="edu-all-btn" onclick="filterEdu(\'all\',this)">전체</button>\n'
-        '      <button class="filter-btn" id="edu-dept-btn" onclick="filterEdu(\'교육부\',this)">교육부</button>\n'
-        '      <div class="edu-dropdown-wrap">\n'
-        '        <button class="edu-dropdown-btn" id="edu-drop-btn" onclick="toggleEduPanel(this)">교육청 선택 <span class="arrow">▼</span></button>\n'
-        '        <div class="edu-sub-panel" id="edu-sub-panel">\n'
-        + edu_sub_panel + '\n'
-        '        </div>\n'
-        '      </div>\n'
-        '      <button class="filter-btn-industry" id="industry-btn" onclick="filterEdu(\'업계동향\',this)">📊 업계동향</button>\n'
-        '    </div>\n'
-        '  </div>\n'
-        + week_sections_html + # 뉴스 섹션들이 이제 page-wrap 안에 들어옴
-        '</div>\n' # page-wrap 종료
-        + MODAL_HTML + '\n'
-        '<script>\n'
-        'const CARD_DATA = ' + card_data_json + ';\n'
-        + JS_FUNCTIONS +
-        '</script>\n'
-        '</body>\n'
-        '</html>'
+    wk_btns = build_week_filter_buttons(weeks_desc)
+    wk_secs = build_week_sections(weeks_desc, all_cards)
+    edu_panel = ''.join(f'<button class="edu-sub-btn" onclick="filterEduSub(\'{n}\',this)">{n}</button>' for n in EDU_SUB_BUTTONS)
+    
+    final_html = (
+        HTML_HEAD + '<body><div class="page-wrap">'
+        '<div class="page-header"><h1>📰 교육 뉴스 브리핑</h1></div>'
+        '<div class="filter-wrap"><div class="filter-row"><span class="filter-label">주차</span>'
+        '<button class="filter-btn week-all-btn active" onclick="filterAllWeeks(this)">전체</button>' + wk_btns + '</div>'
+        '<div class="filter-row" id="edu-row"><span class="filter-label">선택</span>'
+        '<button class="filter-btn active" id="edu-all-btn" onclick="filterEdu(\'all\',this)">전체</button>'
+        '<button class="filter-btn" id="edu-dept-btn" onclick="filterEdu(\'교육부\',this)">교육부</button>'
+        '<div class="edu-dropdown-wrap"><button class="edu-dropdown-btn" id="edu-drop-btn" onclick="toggleEduPanel(this)">교육청 선택 <span class="arrow">▼</span></button>'
+        '<div class="edu-sub-panel" id="edu-sub-panel"><div class="edu-sub-grid">' + edu_panel + '</div></div></div>'
+        '<button class="filter-btn-industry" id="industry-btn" onclick="filterEdu(\'업계동향\',this)">📊 업계동향</button></div></div>'
+        + wk_secs + '</div>' + MODAL_HTML + 
+        '<script>const CARD_DATA = ' + json.dumps(all_cards, ensure_ascii=False) + ';' + JS_FUNCTIONS + '</script></body></html>'
     )
-
-    Path('index.html').write_text(html, encoding='utf-8')
-    print(f'생성 완료: {len(weeks)}개 주차 데이터 처리됨')
+    
+    Path('index.html').write_text(final_html, encoding='utf-8')
+    print("index.html 생성 완료")
 
 if __name__ == '__main__':
     main()
