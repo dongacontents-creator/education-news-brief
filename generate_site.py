@@ -44,7 +44,7 @@ body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background
 .week-badge { background:#1e40af; color:#fff; font-size:12px; font-weight:700; padding:4px 13px; border-radius:12px; white-space:nowrap; }
 .week-date { font-size:12px; color:#aaa; }
 .week-line { flex:1; height:1px; background:#e5e7ef; }
-.card-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+.card-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
 .news-card { background:#fff; border-radius:12px; border:.5px solid #dde1ea; padding:15px 16px 13px; display:flex; flex-direction:column; gap:7px; transition:box-shadow .18s,border-color .18s; }
 .news-card:hover { border-color:#c0c7dc; box-shadow:0 3px 14px rgba(30,64,175,.06); }
 .news-card.hidden { display:none; }
