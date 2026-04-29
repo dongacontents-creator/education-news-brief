@@ -3,7 +3,12 @@ name: 주간 교육 뉴스 자동 수집
 on:
   schedule:
     - cron: '0 23 * * 0'
-  workflow_dispatch:
+   workflow_dispatch:
+    inputs:
+      target_date:
+        description: '수집 기준 날짜 (YYYY-MM-DD, 빈칸=오늘)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
