@@ -2,20 +2,20 @@
 """
 매주 월요일 자동 실행:
 1. 네이버 뉴스 API로 교육 뉴스 수집
-2. Gemini API로 요약 / 인사이트 / 포인트 생성
+2. Groq(Llama) API로 요약 / 인사이트 / 포인트 생성
 3. data/weeks.json에 새 주차 자동 추가
 """
 
 import os, json, re, sys
 import requests
-from google import genai
+from groq import Groq
 from pathlib import Path
 from datetime import date, timedelta
 
 # ── 환경변수 ─────────────────────────────────────────────
 NAVER_ID     = os.environ['NAVER_CLIENT_ID']
 NAVER_SECRET = os.environ['NAVER_CLIENT_SECRET']
-client = genai.Client(api_key=os.environ['GEMINI_API_KEY'], http_options={'api_version': 'v1'})
+groq_client  = Groq(api_key=os.environ['GROQ_API_KEY'])
 
 # ── 검색 쿼리 정의 ────────────────────────────────────────
 QUERIES = [
@@ -127,22 +127,24 @@ JSON만 출력 (```json 불필요):
   "keywords": ["...", "..."]
 }}"""
 
-def gemini_card(title: str, desc: str, url: str, edu_hint: str) -> dict | None:
+def ai_card(title: str, desc: str, url: str, edu_hint: str) -> dict | None:
     prompt = CARD_PROMPT.format(
         title=title, desc=desc, url=url,
         edu_hint=edu_hint or "없음(자동 분류)",
     )
     try:
-        response = client.models.generate_content(
-            model='gemini-1.5-flash',
-            contents=prompt,
+        completion = groq_client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1,
+            max_tokens=512,
         )
-        text = response.text.strip()
+        text = completion.choices[0].message.content.strip()
         text = re.sub(r'^```json\s*', '', text)
         text = re.sub(r'\s*```$', '', text)
         return json.loads(text)
     except Exception as e:
-        print(f"  Gemini 오류: {e}")
+        print(f"  AI 오류: {e}")
         return None
 
 def main():
@@ -187,7 +189,7 @@ def main():
             seen_urls.add(url)
 
             print(f"    처리: {title[:40]}...")
-            result = gemini_card(title, desc, url, edu_hint)
+            result = ai_card(title, desc, url, edu_hint)
             if not result or not result.get("relevant"):
                 print("    → 관련 없음, 스킵")
                 continue
