@@ -23,7 +23,21 @@ QUERIES = [
     ("교육부 AI 디지털교육",      "교육부"),
     ("서울교육청",                "서울특별시교육청"),
     ("경기도교육청",              "경기도교육청"),
-    ("교육청 AI 에듀테크",        None),
+    ("인천교육청",                "인천광역시교육청"),
+    ("부산교육청",                "부산광역시교육청"),
+    ("대구교육청",                "대구광역시교육청"),
+    ("대전교육청",                "대전광역시교육청"),
+    ("광주교육청",                "광주광역시교육청"),
+    ("울산교육청",                "울산광역시교육청"),
+    ("세종교육청",                "세종특별자치시교육청"),
+    ("강원교육청",                "강원도교육청"),
+    ("충북교육청",                "충청북도교육청"),
+    ("충남교육청",                "충청남도교육청"),
+    ("전북교육청",                "전라북도교육청"),
+    ("전남교육청",                "전라남도교육청"),
+    ("경북교육청",                "경상북도교육청"),
+    ("경남교육청",                "경상남도교육청"),
+    ("제주교육청",                "제주특별자치도교육청"),
     ("에듀테크 교육 스타트업",    "업계동향"),
     ("AI 교과서 디지털교육",      "업계동향"),
 ]
@@ -54,8 +68,8 @@ EDU_TAGS = {
 def strip_tags(html: str) -> str:
     return re.sub(r'<[^>]+>', '', html).strip()
 
-def week_info():
-    today = date.today()
+def week_info(ref: date | None = None):
+    today = ref or date.today()
     mon   = today - timedelta(days=today.weekday())
     sun   = mon + timedelta(days=6)
     wom   = (mon.day - 1) // 7 + 1
@@ -132,6 +146,11 @@ def gemini_card(title: str, desc: str, url: str, edu_hint: str) -> dict | None:
         return None
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--date", default="", help="YYYY-MM-DD")
+    args = parser.parse_args()
+    ref_date = date.fromisoformat(args.date) if args.date else None
     data_path = Path("data/weeks.json")
     data = json.loads(data_path.read_text(encoding="utf-8"))
 
@@ -143,7 +162,7 @@ def main():
 
     last_num = max(int(w["id"][1:]) for w in data["weeks"])
     new_id   = f"w{last_num + 1}"
-    info     = week_info()
+    info = week_info(ref_date)
 
     print(f"수집 시작: {new_id} ({info['badge']}) {info['date']}")
 
