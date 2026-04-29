@@ -11,7 +11,7 @@ with open('education_news_brief_v4.html', 'r', encoding='utf-8') as f:
     soup = BeautifulSoup(f.read(), 'html.parser')
 
 # ── 가장 마지막 주차 찾기 ────────────────────────────
-weeks = ['w7','w6','w5','w4','w3','w2','w1']
+weeks = ['w8','w7','w6','w5','w4','w3','w2','w1']
 latest_sec = None
 for w in weeks:
     sec = soup.find('div', class_='week-section', attrs={'data-week': w})
