@@ -33,7 +33,7 @@ jobs:
           username: ${{ secrets.GMAIL_USER }}
           password: ${{ secrets.GMAIL_PASS }}
           subject: "📚 주간 교육 뉴스 브리핑"
-          to: sewon.lee@dona-a.com, chaeyeon.kim@dong-a.com
+          to: sewon.lee@dong-a.com, chaeyeon.kim@dong-a.com
           from: "교육 뉴스 브리핑 <dongacontents@gmail.com>"
           html_body: file://email_newsletter.html
           convert_markdown: false
