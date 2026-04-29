@@ -134,7 +134,7 @@ def gemini_card(title: str, desc: str, url: str, edu_hint: str) -> dict | None:
     )
     try:
         response = client.models.generate_content(
-            model='gemini-1.5-flash-8b',
+            model='gemini-1.5-flash',
             contents=prompt,
         )
         text = response.text.strip()
