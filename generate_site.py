@@ -16,7 +16,7 @@ HTML_HEAD = '''<!DOCTYPE html>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background:#f0f2f6; color:#1a1a2e; font-size:14px; line-height:1.6; }
-.page-wrap { max-width:860px; margin:0 auto; padding:28px 16px 60px; }
+.page-wrap { max-width:1080px; margin:0 auto; padding:28px 48px 60px; }
 .page-header { background:#fff; border-radius:14px; padding:26px 30px 22px; margin-bottom:20px; border:.5px solid #dde1ea; }
 .page-header h1 { font-size:20px; font-weight:700; color:#1a1a2e; margin-bottom:4px; }
 .page-header p { font-size:13px; color:#888; }
