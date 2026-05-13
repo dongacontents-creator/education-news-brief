@@ -76,9 +76,11 @@ def week_info(ref: date | None = None):
     return {
         "date":  f"{mon.strftime('%m.%d')}~{sun.strftime('%m.%d')}",
         "badge": f"{mon.month}월 {wom}주차",
+        "start": mon,
+        "end":   sun,
     }
 
-def naver_search(query: str, display: int = 5) -> list:
+def naver_search(query: str, display: int = 40) -> list:
     resp = requests.get(
         "https://openapi.naver.com/v1/search/news.json",
         headers={
@@ -166,6 +168,11 @@ def main():
     new_id   = f"w{last_num + 1}"
     info = week_info(ref_date)
 
+    existing = [w for w in data["weeks"] if w["badge"] == info["badge"] and w["date"] == info["date"]]
+    if existing:
+        print(f"이미 수집된 주차: {info['badge']} ({info['date']}) — 종료")
+        sys.exit(0)
+
     print(f"수집 시작: {new_id} ({info['badge']}) {info['date']}")
 
     cards    = []
@@ -174,7 +181,7 @@ def main():
     for query, edu_hint in QUERIES:
         print(f"  검색: {query}")
         try:
-            articles = naver_search(query, display=4)
+            articles = naver_search(query)
         except Exception as e:
             print(f"  검색 실패: {e}")
             continue
@@ -208,8 +215,14 @@ def main():
                 from email.utils import parsedate
                 t = parsedate(pub)
                 pub_str = f"{t[0]}.{t[1]:02d}.{t[2]:02d}" if t else ""
+                pub_date = date(t[0], t[1], t[2]) if t else None
             except Exception:
                 pub_str = ""
+                pub_date = None
+
+            if pub_date and not (info["start"] <= pub_date <= info["end"]):
+                print(f"    → 날짜 범위 외 ({pub_str}), 스킵")
+                continue
 
             cards.append({
                 "edu":          edu_type,
