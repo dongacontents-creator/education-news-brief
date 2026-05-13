@@ -66,7 +66,8 @@ EDU_TAGS = {
 }
 
 def strip_tags(html: str) -> str:
-    return re.sub(r'<[^>]+>', '', html).strip()
+    from html import unescape
+    return unescape(re.sub(r'<[^>]+>', '', html)).strip()
 
 def week_info(ref: date | None = None):
     today = ref or date.today()
