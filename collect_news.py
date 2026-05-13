@@ -252,7 +252,7 @@ def main():
         print("수집된 뉴스 없음 — 종료")
         sys.exit(0)
 
-        from collections import Counter
+    from collections import Counter
     kw_final = [kw for kw, _ in Counter(keywords).most_common(3)]
 
     new_week = {
