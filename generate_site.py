@@ -279,10 +279,7 @@ def build_week_sections(weeks, all_cards):
 
 def main():
     try:
-        raw = Path('data/weeks.json').read_text(encoding='utf-8')
-        import re
-        raw = re.sub(r'(?<=[^\\])"(?=[^,\n\]{}:"\'\\])', r'\\"', raw)
-        data = json.loads(raw)
+        data = load_weeks_json(Path('data/weeks.json'))
     except:
         print("data/weeks.json 파일 확인 필요")
         return
