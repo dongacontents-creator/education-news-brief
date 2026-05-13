@@ -252,14 +252,8 @@ def main():
         print("수집된 뉴스 없음 — 종료")
         sys.exit(0)
 
-    seen_kw  = set()
-    kw_final = []
-    for kw in keywords:
-        if kw not in seen_kw:
-            seen_kw.add(kw)
-            kw_final.append(kw)
-        if len(kw_final) == 3:
-            break
+        from collections import Counter
+    kw_final = [kw for kw, _ in Counter(keywords).most_common(3)]
 
     new_week = {
         "id":       new_id,
