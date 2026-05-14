@@ -96,8 +96,11 @@ body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background
 .tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 9px; border-radius:8px; white-space:nowrap; }
 .tag-edu-교육부 { background:#eff6ff; color:#1d4ed8; }
 .tag-edu-업계동향 { background:#fefce8; color:#854d0e; border:1px solid #fde047; }
+.tag-edu-AI동향 { background:#f5f3ff; color:#6d28d9; border:1px solid #c4b5fd; }
 .filter-btn-industry { padding:6px 14px; border-radius:18px; border:1.5px solid #fde047; background:#fefce8; color:#854d0e; font-size:12px; font-weight:700; cursor:pointer; }
 .filter-btn-industry.active { background:#ca8a04; border-color:#ca8a04; color:#fff; }
+.filter-btn-ai { padding:6px 14px; border-radius:18px; border:1.5px solid #c4b5fd; background:#f5f3ff; color:#6d28d9; font-size:12px; font-weight:700; cursor:pointer; }
+.filter-btn-ai.active { background:#7c3aed; border-color:#7c3aed; color:#fff; }
 
 .card-title { font-size:14px; font-weight:700; color:#1a1a2e; line-height:1.4; min-height: 2.8em; }
 .card-summary { font-size:13px; color:#444; line-height:1.55; flex:1; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
@@ -179,11 +182,11 @@ function filterMonthSub(weekId, el) {
 
 function filterEdu(edu, el) {
   activeEdu = edu;
-  document.querySelectorAll('#edu-all-btn,#industry-btn,#edu-dept-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#edu-all-btn,#industry-btn,#ai-btn,#edu-dept-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.edu-sub-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   const dropBtn = document.getElementById('edu-drop-btn');
-  if (edu !== '업계동향') dropBtn.classList.remove('active');
+  if (edu !== '업계동향' && edu !== 'AI동향') dropBtn.classList.remove('active');
   document.getElementById('edu-sub-panel').classList.remove('open');
   dropBtn.classList.remove('open');
   applyFilter();
@@ -311,7 +314,8 @@ def main():
         '<button class="filter-btn" id="edu-dept-btn" onclick="filterEdu(\'교육부\',this)">교육부</button>'
         '<div class="edu-dropdown-wrap"><button class="edu-dropdown-btn" id="edu-drop-btn" onclick="toggleEduPanel(this)">교육청 선택 <span class="arrow">▼</span></button>'
         '<div class="edu-sub-panel" id="edu-sub-panel"><div class="edu-sub-grid">' + edu_panel + '</div></div></div>'
-        '<button class="filter-btn-industry" id="industry-btn" onclick="filterEdu(\'업계동향\',this)">📊 업계동향</button></div></div>'
+        '<button class="filter-btn-industry" id="industry-btn" onclick="filterEdu(\'업계동향\',this)">📊 업계동향</button>'
+                 '<button class="filter-btn-ai" id="ai-btn" onclick="filterEdu(\'AI동향\',this)">🤖 AI동향</button></div></div>'
         + wk_secs + '</div>' + MODAL_HTML + 
         '<script>const CARD_DATA = ' + json.dumps(all_cards, ensure_ascii=False) + ';' + JS_FUNCTIONS + '</script></body></html>'
     )
