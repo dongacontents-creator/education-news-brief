@@ -194,7 +194,7 @@ function filterEdu(edu, el) {
 
 function filterEduSub(edu, el) {
   activeEdu = edu;
-  document.querySelectorAll('#edu-all-btn,#industry-btn,#edu-dept-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#edu-all-btn,#industry-btn,#ai-btn,#edu-dept-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.edu-sub-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   const dropBtn = document.getElementById('edu-drop-btn');
