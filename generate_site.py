@@ -314,8 +314,8 @@ def main():
         '<button class="filter-btn" id="edu-dept-btn" onclick="filterEdu(\'교육부\',this)">교육부</button>'
         '<div class="edu-dropdown-wrap"><button class="edu-dropdown-btn" id="edu-drop-btn" onclick="toggleEduPanel(this)">교육청 선택 <span class="arrow">▼</span></button>'
         '<div class="edu-sub-panel" id="edu-sub-panel"><div class="edu-sub-grid">' + edu_panel + '</div></div></div>'
-        '<button class="filter-btn-industry" id="industry-btn" onclick="filterEdu(\'업계동향\',this)">📊 업계동향</button>'
-                 '<button class="filter-btn-ai" id="ai-btn" onclick="filterEdu(\'AI동향\',this)">🤖 AI동향</button></div></div>'
+        '<button class="filter-btn-industry" id="industry-btn" onclick="filterEdu(\'업계동향\',this)">📊 업계 동향</button>'
+                 '<button class="filter-btn-ai" id="ai-btn" onclick="filterEdu(\'AI동향\',this)">🤖 AI 동향</button></div></div>'
         + wk_secs + '</div>' + MODAL_HTML + 
         '<script>const CARD_DATA = ' + json.dumps(all_cards, ensure_ascii=False) + ';' + JS_FUNCTIONS + '</script></body></html>'
     )
