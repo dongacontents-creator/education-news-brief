@@ -94,6 +94,38 @@ def naver_search(query: str, display: int = 40) -> list:
     resp.raise_for_status()
     return resp.json().get("items", [])
 
+WEEKLY_PROMPT = """\
+이번 주 수집된 교육 뉴스 {n}건을 바탕으로 이번 주 교육계 흐름을 대표하는 종합 인사이트 3줄을 작성하세요.
+
+기사 제목 목록:
+{titles}
+
+규칙:
+- 반드시 JSON 배열로만 출력 (```json 불필요)
+- 각 항목은 한 문장, 40자 이내
+- 이번 주 교육계 전반의 트렌드·흐름을 담을 것
+- 특정 기관명보다 주제 중심으로 작성
+
+["...", "...", "..."]"""
+
+def ai_weekly_insight(cards: list) -> list:
+    titles = "\n".join(f"- {c['title']}" for c in cards[:30])
+    prompt = WEEKLY_PROMPT.format(n=len(cards), titles=titles)
+    try:
+        completion = groq_client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            max_tokens=256,
+        )
+        text = completion.choices[0].message.content.strip()
+        text = re.sub(r'^```json\s*', '', text)
+        text = re.sub(r'\s*```$', '', text)
+        return json.loads(text)
+    except Exception as e:
+        print(f"  주간 인사이트 오류: {e}")
+        return []
+
 CARD_PROMPT = """\
 다음 교육 뉴스 기사를 분석해 JSON으로 정리하세요.
 
@@ -255,12 +287,16 @@ def main():
     from collections import Counter
     kw_final = [kw for kw, _ in Counter(keywords).most_common(3)]
 
+    print("  주간 인사이트 생성 중...")
+    weekly_insight = ai_weekly_insight(cards)
+
     new_week = {
-        "id":       new_id,
-        "badge":    info["badge"],
-        "date":     info["date"],
-        "keywords": kw_final,
-        "cards":    cards,
+        "id":             new_id,
+        "badge":          info["badge"],
+        "date":           info["date"],
+        "keywords":       kw_final,
+        "weekly_insight": weekly_insight,
+        "cards":          cards,
     }
 
     data["weeks"].append(new_week)

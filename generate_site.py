@@ -106,6 +106,10 @@ body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background
 .btn-link { display:inline-block; padding:5px 13px; background:#1e40af; color:#fff; text-decoration:none; border-radius:7px; font-size:12px; font-weight:600; }
 .btn-brief { display:inline-block; padding:5px 13px; background:#f1f5f9; color:#475569; border:none; border-radius:7px; font-size:12px; font-weight:600; cursor:pointer; }
 
+.weekly-insight { background:#f0f7ff; border-left:4px solid #1e40af; border-radius:0 10px 10px 0; padding:13px 16px; margin-bottom:13px; display:flex; flex-direction:column; gap:6px; }
+.weekly-insight-title { font-size:12px; font-weight:700; color:#1e40af; margin-bottom:2px; }
+.weekly-insight-item { font-size:13px; color:#1e293b; line-height:1.5; }
+.weekly-insight-item::before { content:'· '; color:#1e40af; font-weight:700; }
 .week-keywords { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:13px; }
 .kw { display:inline-flex; align-items:center; gap:4px; padding:5px 14px; border-radius:20px; background:#1e3a8a; color:#bfdbfe; font-size:12px; font-weight:700; }
 .kw::before { content:'#'; opacity:.55; }
@@ -271,10 +275,16 @@ def build_week_sections(weeks, all_cards):
                       f'<div class="card-footer"><button class="btn-brief" onclick="openBrief(this)">간략보기</button>'
                       f'<a class="btn-link" href="{c["url"]}" target="_blank">원문보기</a></div></div>')
         m = w['badge'].split()[0]
+        insight_items = w.get('weekly_insight', [])
+        if insight_items:
+            insight_html = ''.join(f'<span class="weekly-insight-item">{escape(i)}</span>' for i in insight_items)
+            insight_block = f'<div class="weekly-insight"><span class="weekly-insight-title">🔍 이번 주의 교육 인사이트</span>{insight_html}</div>'
+        else:
+            insight_block = ''
         html += (f'<div class="week-section" data-week="{w["id"]}" data-month="{m}">'
                  f'<div class="week-header"><span class="week-badge">{escape(w["badge"])}</span>'
                  f'<span class="week-date">{escape(w["date"])}</span><div class="week-line"></div></div>'
-                 f'<div class="week-keywords">{kw}</div><div class="card-grid">{cards}</div></div>')
+                 f'{insight_block}<div class="week-keywords">{kw}</div><div class="card-grid">{cards}</div></div>')
     return html
 
 def main():
