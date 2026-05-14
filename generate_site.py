@@ -68,9 +68,9 @@ body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background
 .edu-dropdown-btn .arrow { font-size:9px; transition:transform .2s; }
 .edu-dropdown-btn.open .arrow { transform:rotate(180deg); }
 
-.edu-sub-panel { display:none; position:absolute; top:calc(100% + 6px); left:0; background:#fff; border:.5px solid #dde1ea; border-radius:10px; padding:10px 12px; z-index:100; min-width:200px; box-shadow:0 8px 24px rgba(0,0,0,.10); }
+.edu-sub-panel { display:none; position:absolute; top:calc(100% + 6px); left:0; background:#fff; border:.5px solid #dde1ea; border-radius:10px; padding:10px 12px; z-index:100; min-width:340px; box-shadow:0 8px 24px rgba(0,0,0,.10); }
 .edu-sub-panel.open { display:block; }
-.edu-sub-grid { display:flex; flex-direction:column; gap:5px; }
+.edu-sub-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
 .edu-sub-btn { padding:5px 10px; border-radius:14px; border:1px solid #e5e7ef; background:#f8fafc; color:#555; font-size:11px; font-weight:600; cursor:pointer; text-align:left; transition:all .15s; width:100%; }
 .edu-sub-btn:hover { background:#eff6ff; border-color:#93c5fd; color:#1d4ed8; }
 .edu-sub-btn.active { background:#1e40af; border-color:#1e40af; color:#fff; }
