@@ -60,6 +60,11 @@ body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background
 
 .filter-wrap { background:#fff; border-radius:10px; border:.5px solid #dde1ea; padding:13px 16px; margin-bottom:20px; display:flex; flex-direction:column; gap:9px; width: 100%; }
 .filter-row { display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
+.search-wrap { display:flex; align-items:center; gap:8px; padding:7px 12px; border:1.5px solid #dde1ea; border-radius:20px; background:#f8fafc; }
+.search-wrap:focus-within { border-color:#1e40af; background:#fff; }
+.search-wrap input { border:none; background:transparent; outline:none; font-size:13px; color:#1a1a2e; width:100%; }
+.search-wrap input::placeholder { color:#94a3b8; }
+.search-icon { color:#94a3b8; font-size:14px; }
 
 .edu-dropdown-wrap { position:relative; }
 .edu-dropdown-btn { padding:6px 14px; border-radius:18px; border:1.5px solid #dde1ea; background:#fff; color:#555; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; display:inline-flex; align-items:center; gap:5px; }
@@ -210,6 +215,12 @@ function toggleEduPanel(btn) {
   btn.classList.toggle('open');
 }
 
+let searchQuery = '';
+function onSearch(val) {
+  searchQuery = val.trim().toLowerCase();
+  applyFilter();
+}
+
 function applyFilter() {
   document.querySelectorAll('.week-section').forEach(sec => {
     const mMatch = activeMonth === 'all' || sec.dataset.month === activeMonth;
@@ -217,7 +228,9 @@ function applyFilter() {
     let visible = 0;
     sec.querySelectorAll('.news-card').forEach(card => {
       const eMatch = activeEdu === 'all' || card.dataset.edu === activeEdu;
-      const show = mMatch && wMatch && eMatch;
+      const title = card.querySelector('.card-title')?.textContent.toLowerCase() || '';
+      const sMatch = !searchQuery || title.includes(searchQuery);
+      const show = mMatch && wMatch && eMatch && sMatch;
       card.classList.toggle('hidden', !show);
       if (show) visible++;
     });
@@ -307,7 +320,7 @@ def main():
     final_html = (
         HTML_HEAD + '<body><div class="page-wrap">'
         '<div class="page-header"><h1>📰 교육 뉴스 브리핑</h1></div>'
-        '<div class="filter-wrap"><div class="filter-row"><span class="filter-label">주차</span>'
+        '<div class="filter-wrap"><div class="search-wrap"><span class="search-icon">🔍</span><input type="text" placeholder="기사 제목 검색..." oninput="onSearch(this.value)"></div><div class="filter-row"><span class="filter-label">주차</span>'
         '<button class="filter-btn week-all-btn active" onclick="filterAllWeeks(this)">전체</button>' + wk_btns + '</div>'
         '<div class="filter-row" id="edu-row"><span class="filter-label">선택</span>'
         '<button class="filter-btn active" id="edu-all-btn" onclick="filterEdu(\'all\',this)">전체</button>'
