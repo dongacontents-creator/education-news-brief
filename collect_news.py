@@ -120,7 +120,7 @@ def week_info(ref: date | None = None):
         "end":   sun,
     }
 
-def naver_search(query: str, display: int = 40) -> list:
+def naver_search(query: str, display: int = 100) -> list:
     resp = requests.get(
         "https://openapi.naver.com/v1/search/news.json",
         headers={
