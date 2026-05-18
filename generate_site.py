@@ -283,7 +283,10 @@ def build_week_sections(weeks, all_cards):
         for c in w['cards']:
             idx = len(all_cards)
             all_cards.append({'title': c['title'], 'points': c.get('points', [c['summary']]), 'insight': c['insight'], 'url': c['url']})
-            tags = ''.join(f'<span class="tag {t["class"]}">{escape(t["text"])}</span>' for t in c['tags'])
+            def fmt_tag(t):
+                text = t["text"].replace("업계동향", "업계 동향").replace("AI동향", "AI 동향")
+                return f'<span class="tag {t["class"]}">{escape(text)}</span>'
+            tags = ''.join(fmt_tag(t) for t in c['tags'])
             cards += (f'<div class="news-card" data-edu="{escape(c["edu"])}" data-idx="{idx}">'
                       f'<div class="card-tags">{tags}</div><div class="card-title">{escape(c["title"])}</div>'
                       f'<div class="card-meta">{escape(c["meta"])}</div><div class="card-summary">{escape(c["summary"])}</div>'
