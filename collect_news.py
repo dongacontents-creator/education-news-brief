@@ -69,7 +69,38 @@ EDU_TAGS = {
     "기타":                 "tag-edu-기타",
 }
 
-def strip_tags(html: str) -> str:
+def _repair_json_line(line):
+    m = re.match(r'^(\s*"(?:[^"\\]|\\.)+"\s*:\s*")(.*)', line)
+    if not m:
+        return line
+    prefix, rest = m.group(1), m.group(2)
+    result, i = [], 0
+    while i < len(rest):
+        ch = rest[i]
+        if ch == '\\':
+            result.append(ch); i += 1
+            if i < len(rest): result.append(rest[i])
+            i += 1
+        elif ch == '"':
+            ahead = rest[i+1:].lstrip()
+            if not ahead or ahead[0] in ',}]':
+                result.append('"'); i += 1
+                result.append(rest[i:]); break
+            else:
+                result.append('\\"'); i += 1
+        else:
+            result.append(ch); i += 1
+    return prefix + ''.join(result)
+
+def load_weeks_json(path):
+    text = path.read_text(encoding='utf-8')
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        fixed = '\n'.join(_repair_json_line(l) for l in text.split('\n'))
+        return json.loads(fixed)
+
+
     from html import unescape
     return unescape(re.sub(r'<[^>]+>', '', html)).strip()
 
@@ -203,7 +234,7 @@ def main():
     args = parser.parse_args()
     ref_date = date.fromisoformat(args.date) if args.date else None
     data_path = Path("data/weeks.json")
-    data = json.loads(data_path.read_text(encoding="utf-8"))
+    data = load_weeks_json(data_path)
 
     seen_urls = {
         card["url"]
