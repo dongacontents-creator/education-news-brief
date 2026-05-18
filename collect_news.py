@@ -69,6 +69,10 @@ EDU_TAGS = {
     "기타":                 "tag-edu-기타",
 }
 
+def strip_tags(html: str) -> str:
+    from html import unescape
+    return unescape(re.sub(r'<[^>]+>', '', html)).strip()
+
 def _repair_json_line(line):
     m = re.match(r'^(\s*"(?:[^"\\]|\\.)+"\s*:\s*")(.*)', line)
     if not m:
