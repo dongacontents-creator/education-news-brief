@@ -39,7 +39,10 @@ QUERIES = [
     ("경남교육청",                "경상남도교육청"),
     ("제주교육청",                "제주특별자치도교육청"),
     ("에듀테크 교육 스타트업",    "업계동향"),
-    ("AI 교과서 디지털교육",      "업계동향"),
+    ("교육 현장 AI 서비스 활용",   "AI동향"),
+    ("학교 AI 튜터 학습",         "AI동향"),
+    ("생성형AI 수업 교사",        "AI동향"),
+    ("AI 디지털교과서 활용",      "AI동향"),
 ]
 
 EDU_TAGS = {
@@ -62,12 +65,44 @@ EDU_TAGS = {
     "경상남도교육청":       "tag-edu-경상남도교육청",
     "제주특별자치도교육청": "tag-edu-제주특별자치도교육청",
     "업계동향":             "tag-edu-업계동향",
+    "AI동향":               "tag-edu-AI동향",
     "기타":                 "tag-edu-기타",
 }
 
 def strip_tags(html: str) -> str:
     from html import unescape
     return unescape(re.sub(r'<[^>]+>', '', html)).strip()
+
+def _repair_json_line(line):
+    m = re.match(r'^(\s*"(?:[^"\\]|\\.)+"\s*:\s*")(.*)', line)
+    if not m:
+        return line
+    prefix, rest = m.group(1), m.group(2)
+    result, i = [], 0
+    while i < len(rest):
+        ch = rest[i]
+        if ch == '\\':
+            result.append(ch); i += 1
+            if i < len(rest): result.append(rest[i])
+            i += 1
+        elif ch == '"':
+            ahead = rest[i+1:].lstrip()
+            if not ahead or ahead[0] in ',}]':
+                result.append('"'); i += 1
+                result.append(rest[i:]); break
+            else:
+                result.append('\\"'); i += 1
+        else:
+            result.append(ch); i += 1
+    return prefix + ''.join(result)
+
+def load_weeks_json(path):
+    text = path.read_text(encoding='utf-8')
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        fixed = '\n'.join(_repair_json_line(l) for l in text.split('\n'))
+        return json.loads(fixed)
 
 def week_info(ref: date | None = None):
     today = ref or date.today()
@@ -77,9 +112,11 @@ def week_info(ref: date | None = None):
     return {
         "date":  f"{mon.strftime('%m.%d')}~{sun.strftime('%m.%d')}",
         "badge": f"{mon.month}월 {wom}주차",
+        "start": mon,
+        "end":   sun,
     }
 
-def naver_search(query: str, display: int = 5) -> list:
+def naver_search(query: str, display: int = 100) -> list:
     resp = requests.get(
         "https://openapi.naver.com/v1/search/news.json",
         headers={
@@ -91,6 +128,38 @@ def naver_search(query: str, display: int = 5) -> list:
     )
     resp.raise_for_status()
     return resp.json().get("items", [])
+
+WEEKLY_PROMPT = """\
+이번 주 수집된 교육 뉴스 {n}건을 바탕으로 이번 주 교육계 흐름을 대표하는 종합 인사이트 3줄을 작성하세요.
+
+기사 제목 목록:
+{titles}
+
+규칙:
+- 반드시 JSON 배열로만 출력 (```json 불필요)
+- 각 항목은 한 문장, 40자 이내
+- 이번 주 교육계 전반의 트렌드·흐름을 담을 것
+- 특정 기관명보다 주제 중심으로 작성
+
+["...", "...", "..."]"""
+
+def ai_weekly_insight(cards: list) -> list:
+    titles = "\n".join(f"- {c['title']}" for c in cards[:30])
+    prompt = WEEKLY_PROMPT.format(n=len(cards), titles=titles)
+    try:
+        completion = groq_client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            max_tokens=256,
+        )
+        text = completion.choices[0].message.content.strip()
+        text = re.sub(r'^```json\s*', '', text)
+        text = re.sub(r'\s*```$', '', text)
+        return json.loads(text)
+    except Exception as e:
+        print(f"  주간 인사이트 오류: {e}")
+        return []
 
 CARD_PROMPT = """\
 다음 교육 뉴스 기사를 분석해 JSON으로 정리하세요.
@@ -108,7 +177,17 @@ edu 힌트: {edu_hint}
    강원도교육청 / 충청북도교육청 / 충청남도교육청 / 전라북도교육청 /
    전라남도교육청 / 경상북도교육청 / 경상남도교육청 /
    제주특별자치도교육청 / 업계동향 / 기타
-2. relevant: 교육 관련 기사면 true, 아니면 false
+2. relevant: 아래 기준으로 판단
+   true  → 교육 정책·제도·현장·기술·학생·교사·커리큘럼 중심 기사
+            edu 힌트가 "AI동향"이면 추가 조건: 교육 현장(학교·수업·교사·학생)에서
+            AI 서비스·도구를 실제 사용하거나 도입한 내용이어야 true
+   false → 다음 중 하나라도 해당하면 반드시 false
+            · 교육감 선거·후보·정당 관련
+            · 특정 정치인 지지/비판이 주제
+            · 교육청·교육부 내부 갈등, 비리 수사, 노조 파업
+            · 정쟁(政爭)이 중심이고 교육 내용이 부수적
+            · 교육과 직접 관련 없는 일반 사회·경제·연예 기사
+            · edu 힌트가 "AI동향"인데 교육 현장 AI 활용과 무관한 기사
 3. source: 언론사 이름 (간단히)
 4. topic: 핵심 주제 2~5글자
 5. summary: 2문장 이내 한국어 요약
@@ -155,7 +234,7 @@ def main():
     args = parser.parse_args()
     ref_date = date.fromisoformat(args.date) if args.date else None
     data_path = Path("data/weeks.json")
-    data = json.loads(data_path.read_text(encoding="utf-8"))
+    data = load_weeks_json(data_path)
 
     seen_urls = {
         card["url"]
@@ -167,6 +246,11 @@ def main():
     new_id   = f"w{last_num + 1}"
     info = week_info(ref_date)
 
+    existing = [w for w in data["weeks"] if w["badge"] == info["badge"] and w["date"] == info["date"]]
+    if existing:
+        print(f"이미 수집된 주차: {info['badge']} ({info['date']}) — 종료")
+        sys.exit(0)
+
     print(f"수집 시작: {new_id} ({info['badge']}) {info['date']}")
 
     cards    = []
@@ -175,7 +259,7 @@ def main():
     for query, edu_hint in QUERIES:
         print(f"  검색: {query}")
         try:
-            articles = naver_search(query, display=4)
+            articles = naver_search(query)
         except Exception as e:
             print(f"  검색 실패: {e}")
             continue
@@ -209,8 +293,14 @@ def main():
                 from email.utils import parsedate
                 t = parsedate(pub)
                 pub_str = f"{t[0]}.{t[1]:02d}.{t[2]:02d}" if t else ""
+                pub_date = date(t[0], t[1], t[2]) if t else None
             except Exception:
                 pub_str = ""
+                pub_date = None
+
+            if pub_date and not (info["start"] <= pub_date <= info["end"]):
+                print(f"    → 날짜 범위 외 ({pub_str}), 스킵")
+                continue
 
             cards.append({
                 "edu":          edu_type,
@@ -232,21 +322,19 @@ def main():
         print("수집된 뉴스 없음 — 종료")
         sys.exit(0)
 
-    seen_kw  = set()
-    kw_final = []
-    for kw in keywords:
-        if kw not in seen_kw:
-            seen_kw.add(kw)
-            kw_final.append(kw)
-        if len(kw_final) == 3:
-            break
+    from collections import Counter
+    kw_final = [kw for kw, _ in Counter(keywords).most_common(3)]
+
+    print("  주간 인사이트 생성 중...")
+    weekly_insight = ai_weekly_insight(cards)
 
     new_week = {
-        "id":       new_id,
-        "badge":    info["badge"],
-        "date":     info["date"],
-        "keywords": kw_final,
-        "cards":    cards,
+        "id":             new_id,
+        "badge":          info["badge"],
+        "date":           info["date"],
+        "keywords":       kw_final,
+        "weekly_insight": weekly_insight,
+        "cards":          cards,
     }
 
     data["weeks"].append(new_week)
