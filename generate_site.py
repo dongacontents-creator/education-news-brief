@@ -60,6 +60,11 @@ body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background
 
 .filter-wrap { background:#fff; border-radius:10px; border:.5px solid #dde1ea; padding:13px 16px; margin-bottom:20px; display:flex; flex-direction:column; gap:9px; width: 100%; }
 .filter-row { display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
+.search-wrap { display:flex; align-items:center; gap:8px; padding:7px 12px; border:1.5px solid #dde1ea; border-radius:20px; background:#f8fafc; }
+.search-wrap:focus-within { border-color:#1e40af; background:#fff; }
+.search-wrap input { border:none; background:transparent; outline:none; font-size:13px; color:#1a1a2e; width:100%; }
+.search-wrap input::placeholder { color:#94a3b8; }
+.search-icon { color:#94a3b8; font-size:14px; }
 
 .edu-dropdown-wrap { position:relative; }
 .edu-dropdown-btn { padding:6px 14px; border-radius:18px; border:1.5px solid #dde1ea; background:#fff; color:#555; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; display:inline-flex; align-items:center; gap:5px; }
@@ -68,10 +73,10 @@ body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background
 .edu-dropdown-btn .arrow { font-size:9px; transition:transform .2s; }
 .edu-dropdown-btn.open .arrow { transform:rotate(180deg); }
 
-.edu-sub-panel { display:none; position:absolute; top:calc(100% + 6px); left:0; background:#fff; border:.5px solid #dde1ea; border-radius:10px; padding:10px 12px; z-index:100; min-width:260px; box-shadow:0 8px 24px rgba(0,0,0,.10); }
+.edu-sub-panel { display:none; position:absolute; top:calc(100% + 6px); left:0; background:#fff; border:.5px solid #dde1ea; border-radius:10px; padding:10px 12px; z-index:100; min-width:340px; box-shadow:0 8px 24px rgba(0,0,0,.10); }
 .edu-sub-panel.open { display:block; }
 .edu-sub-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
-.edu-sub-btn { padding:5px 10px; border-radius:14px; border:1px solid #e5e7ef; background:#f8fafc; color:#555; font-size:11px; font-weight:600; cursor:pointer; text-align:left; transition:all .15s; }
+.edu-sub-btn { padding:5px 10px; border-radius:14px; border:1px solid #e5e7ef; background:#f8fafc; color:#555; font-size:11px; font-weight:600; cursor:pointer; text-align:left; transition:all .15s; width:100%; }
 .edu-sub-btn:hover { background:#eff6ff; border-color:#93c5fd; color:#1d4ed8; }
 .edu-sub-btn.active { background:#1e40af; border-color:#1e40af; color:#fff; }
 
@@ -96,8 +101,11 @@ body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background
 .tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 9px; border-radius:8px; white-space:nowrap; }
 .tag-edu-교육부 { background:#eff6ff; color:#1d4ed8; }
 .tag-edu-업계동향 { background:#fefce8; color:#854d0e; border:1px solid #fde047; }
+.tag-edu-AI동향 { background:#f5f3ff; color:#6d28d9; border:1px solid #c4b5fd; }
 .filter-btn-industry { padding:6px 14px; border-radius:18px; border:1.5px solid #fde047; background:#fefce8; color:#854d0e; font-size:12px; font-weight:700; cursor:pointer; }
 .filter-btn-industry.active { background:#ca8a04; border-color:#ca8a04; color:#fff; }
+.filter-btn-ai { padding:6px 14px; border-radius:18px; border:1.5px solid #c4b5fd; background:#f5f3ff; color:#6d28d9; font-size:12px; font-weight:700; cursor:pointer; }
+.filter-btn-ai.active { background:#7c3aed; border-color:#7c3aed; color:#fff; }
 
 .card-title { font-size:14px; font-weight:700; color:#1a1a2e; line-height:1.4; min-height: 2.8em; }
 .card-summary { font-size:13px; color:#444; line-height:1.55; flex:1; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
@@ -106,6 +114,10 @@ body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background
 .btn-link { display:inline-block; padding:5px 13px; background:#1e40af; color:#fff; text-decoration:none; border-radius:7px; font-size:12px; font-weight:600; }
 .btn-brief { display:inline-block; padding:5px 13px; background:#f1f5f9; color:#475569; border:none; border-radius:7px; font-size:12px; font-weight:600; cursor:pointer; }
 
+.weekly-insight { background:#f0f7ff; border-left:4px solid #1e40af; border-radius:0 10px 10px 0; padding:13px 16px; margin-bottom:13px; display:flex; flex-direction:column; gap:6px; }
+.weekly-insight-title { font-size:12px; font-weight:700; color:#1e40af; margin-bottom:2px; }
+.weekly-insight-item { font-size:13px; color:#1e293b; line-height:1.5; }
+.weekly-insight-item::before { content:'· '; color:#1e40af; font-weight:700; }
 .week-keywords { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:13px; }
 .kw { display:inline-flex; align-items:center; gap:4px; padding:5px 14px; border-radius:20px; background:#1e3a8a; color:#bfdbfe; font-size:12px; font-weight:700; }
 .kw::before { content:'#'; opacity:.55; }
@@ -175,11 +187,11 @@ function filterMonthSub(weekId, el) {
 
 function filterEdu(edu, el) {
   activeEdu = edu;
-  document.querySelectorAll('#edu-all-btn,#industry-btn,#edu-dept-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#edu-all-btn,#industry-btn,#ai-btn,#edu-dept-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.edu-sub-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   const dropBtn = document.getElementById('edu-drop-btn');
-  if (edu !== '업계동향') dropBtn.classList.remove('active');
+  if (edu !== '업계동향' && edu !== 'AI동향') dropBtn.classList.remove('active');
   document.getElementById('edu-sub-panel').classList.remove('open');
   dropBtn.classList.remove('open');
   applyFilter();
@@ -187,7 +199,7 @@ function filterEdu(edu, el) {
 
 function filterEduSub(edu, el) {
   activeEdu = edu;
-  document.querySelectorAll('#edu-all-btn,#industry-btn,#edu-dept-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#edu-all-btn,#industry-btn,#ai-btn,#edu-dept-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.edu-sub-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   const dropBtn = document.getElementById('edu-drop-btn');
@@ -203,6 +215,12 @@ function toggleEduPanel(btn) {
   btn.classList.toggle('open');
 }
 
+let searchQuery = '';
+function onSearch(val) {
+  searchQuery = val.trim().toLowerCase();
+  applyFilter();
+}
+
 function applyFilter() {
   document.querySelectorAll('.week-section').forEach(sec => {
     const mMatch = activeMonth === 'all' || sec.dataset.month === activeMonth;
@@ -210,7 +228,9 @@ function applyFilter() {
     let visible = 0;
     sec.querySelectorAll('.news-card').forEach(card => {
       const eMatch = activeEdu === 'all' || card.dataset.edu === activeEdu;
-      const show = mMatch && wMatch && eMatch;
+      const title = card.querySelector('.card-title')?.textContent.toLowerCase() || '';
+      const sMatch = !searchQuery || title.includes(searchQuery);
+      const show = mMatch && wMatch && eMatch && sMatch;
       card.classList.toggle('hidden', !show);
       if (show) visible++;
     });
@@ -263,7 +283,10 @@ def build_week_sections(weeks, all_cards):
         for c in w['cards']:
             idx = len(all_cards)
             all_cards.append({'title': c['title'], 'points': c.get('points', [c['summary']]), 'insight': c['insight'], 'url': c['url']})
-            tags = ''.join(f'<span class="tag {t["class"]}">{escape(t["text"])}</span>' for t in c['tags'])
+            def fmt_tag(t):
+                text = t["text"].replace("업계동향", "업계 동향").replace("AI동향", "AI 동향")
+                return f'<span class="tag {t["class"]}">{escape(text)}</span>'
+            tags = ''.join(fmt_tag(t) for t in c['tags'])
             cards += (f'<div class="news-card" data-edu="{escape(c["edu"])}" data-idx="{idx}">'
                       f'<div class="card-tags">{tags}</div><div class="card-title">{escape(c["title"])}</div>'
                       f'<div class="card-meta">{escape(c["meta"])}</div><div class="card-summary">{escape(c["summary"])}</div>'
@@ -271,10 +294,16 @@ def build_week_sections(weeks, all_cards):
                       f'<div class="card-footer"><button class="btn-brief" onclick="openBrief(this)">간략보기</button>'
                       f'<a class="btn-link" href="{c["url"]}" target="_blank">원문보기</a></div></div>')
         m = w['badge'].split()[0]
+        insight_items = w.get('weekly_insight', [])
+        if insight_items:
+            insight_html = ''.join(f'<span class="weekly-insight-item">{escape(i)}</span>' for i in insight_items)
+            insight_block = f'<div class="weekly-insight"><span class="weekly-insight-title">🔍 이번 주의 교육 인사이트</span>{insight_html}</div>'
+        else:
+            insight_block = ''
         html += (f'<div class="week-section" data-week="{w["id"]}" data-month="{m}">'
                  f'<div class="week-header"><span class="week-badge">{escape(w["badge"])}</span>'
                  f'<span class="week-date">{escape(w["date"])}</span><div class="week-line"></div></div>'
-                 f'<div class="week-keywords">{kw}</div><div class="card-grid">{cards}</div></div>')
+                 f'{insight_block}<div class="week-keywords">{kw}</div><div class="card-grid">{cards}</div></div>')
     return html
 
 def main():
@@ -294,14 +323,15 @@ def main():
     final_html = (
         HTML_HEAD + '<body><div class="page-wrap">'
         '<div class="page-header"><h1>📰 교육 뉴스 브리핑</h1></div>'
-        '<div class="filter-wrap"><div class="filter-row"><span class="filter-label">주차</span>'
+        '<div class="filter-wrap"><div class="search-wrap"><span class="search-icon">🔍</span><input type="text" placeholder="기사 제목 검색..." oninput="onSearch(this.value)"></div><div class="filter-row"><span class="filter-label">주차</span>'
         '<button class="filter-btn week-all-btn active" onclick="filterAllWeeks(this)">전체</button>' + wk_btns + '</div>'
         '<div class="filter-row" id="edu-row"><span class="filter-label">선택</span>'
         '<button class="filter-btn active" id="edu-all-btn" onclick="filterEdu(\'all\',this)">전체</button>'
         '<button class="filter-btn" id="edu-dept-btn" onclick="filterEdu(\'교육부\',this)">교육부</button>'
         '<div class="edu-dropdown-wrap"><button class="edu-dropdown-btn" id="edu-drop-btn" onclick="toggleEduPanel(this)">교육청 선택 <span class="arrow">▼</span></button>'
         '<div class="edu-sub-panel" id="edu-sub-panel"><div class="edu-sub-grid">' + edu_panel + '</div></div></div>'
-        '<button class="filter-btn-industry" id="industry-btn" onclick="filterEdu(\'업계동향\',this)">📊 업계동향</button></div></div>'
+        '<button class="filter-btn-industry" id="industry-btn" onclick="filterEdu(\'업계동향\',this)">📊 업계 동향</button>'
+                 '<button class="filter-btn-ai" id="ai-btn" onclick="filterEdu(\'AI동향\',this)">🤖 AI 동향</button></div></div>'
         + wk_secs + '</div>' + MODAL_HTML + 
         '<script>const CARD_DATA = ' + json.dumps(all_cards, ensure_ascii=False) + ';' + JS_FUNCTIONS + '</script></body></html>'
     )
