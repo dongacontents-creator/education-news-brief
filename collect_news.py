@@ -69,6 +69,61 @@ EDU_TAGS = {
     "기타":                 "tag-edu-기타",
 }
 
+DOMAIN_MAP = {
+    "sedaily.com": "서울경제", "mt.co.kr": "머니투데이", "khan.co.kr": "경향신문",
+    "etnews.com": "전자신문", "edaily.co.kr": "이데일리", "munhwa.com": "문화일보",
+    "seoul.co.kr": "서울신문", "segye.com": "세계일보", "joongdo.co.kr": "중도일보",
+    "newsis.com": "뉴시스", "news1.kr": "뉴스1", "newspim.com": "뉴스핌",
+    "pressian.com": "프레시안", "mediatoday.co.kr": "미디어오늘", "yna.co.kr": "연합뉴스",
+    "fnnews.com": "파이낸셜뉴스", "ddaily.co.kr": "디지털데일리", "ajunews.com": "아주경제",
+    "asiae.co.kr": "아시아경제", "etoday.co.kr": "이투데이", "viva100.com": "비바100",
+    "enewstoday.co.kr": "이뉴스투데이", "breaknews.com": "브레이크뉴스",
+    "newstown.co.kr": "뉴스타운", "platum.kr": "플래텀", "hellot.net": "헬로티",
+    "nongmin.com": "농민신문", "hansbiz.co.kr": "한스경제",
+    "m-economynews.com": "M이코노미뉴스", "m-i.kr": "매일일보",
+    "sportsseoul.com": "스포츠서울", "stnsports.co.kr": "STN스포츠",
+    "ibabynews.com": "베이비뉴스", "newslock.co.kr": "뉴스락",
+    "gosiweek.com": "고시위크", "lawissue.co.kr": "법률이슈",
+    "christiantoday.co.kr": "크리스천투데이", "kpinews.kr": "KPI뉴스",
+    "newsgn.com": "뉴스간보기", "newstnt.com": "뉴스TNT", "ttlnews.com": "TTL뉴스",
+    "cwn.kr": "충청와이드뉴스", "siminilbo.co.kr": "시민일보",
+    "sisanews24.co.kr": "시사뉴스24", "pointdaily.co.kr": "포인트데일리",
+    "shinailbo.co.kr": "신아일보", "beyondpost.co.kr": "비욘드포스트",
+    "bzeronews.com": "비제로뉴스", "cctimes.kr": "충청타임즈",
+    "ccdailynews.com": "충청데일리뉴스", "ccdn.co.kr": "충청데일리뉴스",
+    "expressnews.co.kr": "익스프레스뉴스", "fsnews.co.kr": "FS뉴스",
+    "segyenews.com": "세계뉴스", "asiatime.co.kr": "아시아타임스",
+    "metroseoul.co.kr": "메트로서울", "daehanilbo.co.kr": "대한일보",
+    "chungnamilbo.co.kr": "충남일보", "daejonilbo.com": "대전일보",
+    "econonews.co.kr": "이코노뉴스", "hangyo.com": "한국교육신문",
+    "edpl.co.kr": "교육플러스", "eduplusnews.com": "에듀플러스",
+    "edupress.kr": "에듀프레스", "lecturernews.com": "강사신문",
+    "news.unn.net": "한국대학신문", "imaeil.com": "매일신문",
+    "yeongnam.com": "영남일보", "kookje.co.kr": "국제신문",
+    "kyeonggi.com": "경기일보", "kyeongin.com": "경인일보",
+    "incheonilbo.com": "인천일보", "kihoilbo.co.kr": "기호일보",
+    "ksilbo.co.kr": "경상일보", "ksmnews.co.kr": "경상매일신문",
+    "kyongbuk.co.kr": "경북일보", "gukjenews.com": "국제뉴스",
+    "kwnews.co.kr": "강원일보", "kwangju.co.kr": "광주일보",
+    "gnmaeil.com": "경남매일", "gndomin.com": "경남도민일보",
+    "ggilbo.com": "금강일보", "goodmorningcc.com": "굿모닝충청",
+    "gimhaenews.co.kr": "김해뉴스", "knnews.co.kr": "경남신문",
+    "domin.co.kr": "제주도민일보", "jemin.com": "제민일보",
+    "mediajeju.com": "미디어제주", "jbnews.com": "전북뉴스",
+    "jeonmae.co.kr": "전남매일", "jndn.com": "전남도민신문",
+    "dkilbo.com": "대경일보", "dynews.co.kr": "동양일보",
+    "ulsanpress.net": "울산프레스", "hidomin.com": "경남도민일보",
+    "kbsm.net": "KBS부산", "samdailbo.com": "삼일보",
+    "ikbn.news": "인천경기방송", "ikbc.co.kr": "KBC광주방송",
+    "kgnews.co.kr": "경기뉴스", "gg.newdaily.co.kr": "뉴데일리",
+    "koreajoongangdaily.joins.com": "코리아중앙데일리",
+    "cstimes.com": "컨슈머타임스", "news.kbs.co.kr": "KBS뉴스",
+    "imnews.imbc.com": "MBC뉴스", "news.knn.co.kr": "KNN",
+    "jibs.co.kr": "JIBS제주방송", "dgmbc.com": "대구MBC",
+    "mbceg.co.kr": "MBC경남", "web.ubc.co.kr": "울산방송",
+    "news.ebs.co.kr": "EBS뉴스", "dazabi.com": "다자비",
+}
+
 def strip_tags(html: str) -> str:
     from html import unescape
     return unescape(re.sub(r'<[^>]+>', '', html)).strip()
@@ -282,9 +337,14 @@ def main():
                 print("    → 관련 없음, 스킵")
                 continue
 
-            # ⓒ 저작권 표시에서 언론사명 추출 (없으면 AI 결과 사용)
+            # 언론사명: ① ⓒ 저작권 표시 → ② 도메인 매핑 → ③ AI 추론값
             copy_match = re.search(r'[ⓒ©]\s*([^,\n]+)', desc)
-            source = copy_match.group(1).strip() if copy_match else result.get("source", "")
+            if copy_match:
+                source = copy_match.group(1).strip()
+            else:
+                from urllib.parse import urlparse
+                _dom = urlparse(url).netloc.replace("www.", "")
+                source = DOMAIN_MAP.get(_dom) or result.get("source", "")
 
             edu_type = result.get("edu_type", "기타")
             tag_cls  = EDU_TAGS.get(edu_type, "tag-edu-기타")
