@@ -1,9 +1,7 @@
 name: 주간 교육 뉴스 브리핑 발송
 
 on:
-  schedule:
-    - cron: '0 3 * * 1'  # 매주 월요일 03:00 UTC = 월요일 12:00 KST
-  workflow_dispatch:        # 수동 실행 버튼 (테스트용)
+  workflow_dispatch:        # 수동 실행 시에만 (자동 발송 중단)
 
 jobs:
   send-email:
