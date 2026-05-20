@@ -282,12 +282,16 @@ def main():
                 print("    → 관련 없음, 스킵")
                 continue
 
+            # ⓒ 저작권 표시에서 언론사명 추출 (없으면 AI 결과 사용)
+            copy_match = re.search(r'[ⓒ©]\s*([^,\n]+)', desc)
+            source = copy_match.group(1).strip() if copy_match else result.get("source", "")
+
             edu_type = result.get("edu_type", "기타")
             tag_cls  = EDU_TAGS.get(edu_type, "tag-edu-기타")
 
             tags = [{"class": tag_cls, "text": edu_type}]
-            if result.get("source"):
-                tags.append({"class": "tag-source", "text": result["source"]})
+            if source:
+                tags.append({"class": "tag-source", "text": source})
             if result.get("topic"):
                 tags.append({"class": "tag-topic", "text": result["topic"]})
 
@@ -309,7 +313,7 @@ def main():
                 "edu":          edu_type,
                 "tags":         tags,
                 "title":        title,
-                "meta":         f"{pub_str} · {result.get('source', '')}",
+                "meta":         f"{pub_str} · {source}",
                 "summary":      result.get("summary", desc[:100]),
                 "insight":      result.get("insight", ""),
                 "url":          url,
