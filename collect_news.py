@@ -385,6 +385,13 @@ def main():
             keywords.extend(result.get("keywords", []))
             print(f"    → 추가 완료 ({edu_type})")
 
+            if len(cards) >= 200:
+                print("  카드 200개 도달 — 수집 중단")
+                break
+        else:
+            continue
+        break
+
     if not cards:
         print("수집된 뉴스 없음 — 종료")
         sys.exit(0)
@@ -401,9 +408,15 @@ def main():
         "강원도교육청", "충청북도교육청", "충청남도교육청",
         "전라북도교육청", "전라남도교육청", "경상북도교육청",
         "경상남도교육청", "제주특별자치도교육청",
-        "학교", "교사", "학생", "교육", "대학", "교원",
+        "학교", "교사", "학생", "교육", "대학", "교원", "지원", "운영",
+        "강화", "확대", "추진", "개선", "발전", "시행", "도입", "계획",
     }
-    filtered_kw = [kw for kw in keywords if kw not in KW_STOPWORDS]
+    filtered_kw = [
+        kw for kw in keywords
+        if kw not in KW_STOPWORDS
+        and not kw.isascii()   # 영어 단어 제외
+        and len(kw) >= 3       # 2글자 이하 제외
+    ]
     kw_final = [kw for kw, _ in Counter(filtered_kw).most_common(3)]
 
     print("  주간 인사이트 생성 중...")
