@@ -343,6 +343,16 @@ def main():
                 continue
             seen_urls.add(url)
 
+            # 정치·선거·인사·지방대 관련 기사 필터링
+            TITLE_BLOCKLIST = [
+                "후보", "유세", "선거", "출마", "공약", "당선", "낙선",
+                "시상", "표창", "수상", "포상", "훈장", "공로상",
+                "지방대", "대학원", "총장",
+            ]
+            if any(kw in title for kw in TITLE_BLOCKLIST):
+                print(f"    → 필터 제외: {title[:40]}")
+                continue
+
             print(f"    처리: {title[:40]}...")
             result = ai_card(title, desc, url, edu_hint)
             if not result or not result.get("relevant"):
