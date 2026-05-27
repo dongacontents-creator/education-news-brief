@@ -1,0 +1,54 @@
+name: 사이트 배포만 실행
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: 체크아웃
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Python 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 패키지 설치
+        run: pip install beautifulsoup4
+
+      - name: HTML 사이트 생성
+        run: python generate_site.py
+
+      - name: 배포 파일 준비
+        run: |
+          mkdir -p _site
+          cp index.html _site/
+
+      - name: GitHub Pages 설정
+        uses: actions/configure-pages@v4
+
+      - name: Pages 아티팩트 업로드
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+      - name: GitHub Pages 배포
+        id: deployment
+        uses: actions/deploy-pages@v4
