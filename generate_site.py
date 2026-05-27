@@ -169,9 +169,19 @@ function toggleMonthPanel(month, btn) {
   const panel = document.getElementById('month-sub-' + month);
   const isOpen = panel.classList.contains('open');
   document.querySelectorAll('.month-sub-panel').forEach(p => p.classList.remove('open'));
-  document.querySelectorAll('.month-dropdown-btn').forEach(b => b.classList.remove('open'));
-  if (!isOpen) { panel.classList.add('open'); btn.classList.add('open'); }
-  activeMonth = month;
+  document.querySelectorAll('.month-dropdown-btn').forEach(b => b.classList.remove('open', 'active'));
+  if (!isOpen) {
+    panel.classList.add('open');
+    btn.classList.add('open', 'active');
+    document.querySelectorAll('.week-all-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.month-sub-btn').forEach(b => b.classList.remove('active'));
+  } else {
+    activeMonth = 'all'; activeWeek = 'all';
+    document.querySelectorAll('.week-all-btn').forEach(b => b.classList.add('active'));
+    document.querySelectorAll('.month-sub-btn').forEach(b => b.classList.remove('active'));
+  }
+  activeMonth = isOpen ? 'all' : month;
+  if (isOpen) activeWeek = 'all';
   applyFilter();
 }
 
