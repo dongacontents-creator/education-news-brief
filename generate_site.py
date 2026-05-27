@@ -190,9 +190,11 @@ function filterMonthSub(weekId, el) {
   document.querySelectorAll('.month-sub-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.week-all-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
-  // 선택 시 드롭다운 닫기
+  // 선택 시 드롭다운 닫기, 부모 월 버튼 active 표시
   document.querySelectorAll('.month-sub-panel').forEach(p => p.classList.remove('open'));
-  document.querySelectorAll('.month-dropdown-btn').forEach(b => b.classList.remove('open'));
+  document.querySelectorAll('.month-dropdown-btn').forEach(b => b.classList.remove('open', 'active'));
+  const parentWrap = el.closest('.month-dropdown-wrap');
+  if (parentWrap) parentWrap.querySelector('.month-dropdown-btn').classList.add('active');
   applyFilter();
 }
 
