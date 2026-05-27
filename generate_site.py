@@ -178,6 +178,7 @@ function toggleMonthPanel(month, btn) {
 function filterMonthSub(weekId, el) {
   activeWeek = weekId;
   document.querySelectorAll('.month-sub-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.week-all-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   // 선택 시 드롭다운 닫기
   document.querySelectorAll('.month-sub-panel').forEach(p => p.classList.remove('open'));
