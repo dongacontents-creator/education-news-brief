@@ -88,6 +88,26 @@ EDU_TAGS = {
 }
 
 DOMAIN_MAP = {
+    # 주요 전국지 (서브도메인 포함)
+    "joongang.co.kr": "중앙일보", "joins.com": "중앙일보",
+    "chosun.com": "조선일보", "news.chosun.com": "조선일보", "edu.chosun.com": "조선에듀",
+    "biz.chosun.com": "조선비즈", "chosunbiz.com": "조선비즈",
+    "tvchosun.com": "TV조선", "news.tvchosun.com": "TV조선", "itchosun.com": "IT조선",
+    "donga.com": "동아일보", "hani.co.kr": "한겨레",
+    "hankyung.com": "한국경제", "hankookilbo.com": "한국일보",
+    "heraldcorp.com": "헤럴드경제", "biz.heraldcorp.com": "헤럴드경제",
+    "mk.co.kr": "매일경제", "yonhapnews.co.kr": "연합뉴스",
+    "ohmynews.com": "오마이뉴스", "sisain.co.kr": "시사IN",
+    "naeil.com": "내일신문", "labortoday.co.kr": "매일노동뉴스",
+    "busan.com": "부산일보",
+    "newstomato.com": "뉴스토마토", "greened.kr": "녹색경제신문",
+    "aitimes.com": "AI타임스", "aitimes.kr": "AI타임스",
+    "bloter.net": "블로터", "zdnet.co.kr": "ZDNet코리아",
+    "dt.co.kr": "디지털타임스", "inews24.com": "아이뉴스24",
+    "edujin.co.kr": "에듀진", "eduinnews.co.kr": "에듀인뉴스",
+    "veritas-a.com": "베리타스알파",
+    "sbs.co.kr": "SBS", "kbs.co.kr": "KBS", "mbc.co.kr": "MBC", "ytn.co.kr": "YTN",
+    # 기존 항목
     "sedaily.com": "서울경제", "mt.co.kr": "머니투데이", "khan.co.kr": "경향신문",
     "etnews.com": "전자신문", "edaily.co.kr": "이데일리", "munhwa.com": "문화일보",
     "seoul.co.kr": "서울신문", "segye.com": "세계일보", "joongdo.co.kr": "중도일보",
@@ -366,14 +386,18 @@ def main():
                 print("    → 관련 없음, 스킵")
                 continue
 
-            # 언론사명: ① ⓒ 저작권 표시 → ② 도메인 매핑 → ③ AI 추론값
+            # 언론사명: ① ⓒ 저작권 표시 → ② 도메인 매핑(서브도메인 포함) → ③ AI 추론값
             copy_match = re.search(r'[ⓒ©]\s*([^,\n]+)', desc)
             if copy_match:
                 source = copy_match.group(1).strip()
             else:
                 from urllib.parse import urlparse
                 _dom = urlparse(url).netloc.replace("www.", "")
-                source = DOMAIN_MAP.get(_dom) or result.get("source", "")
+                # 정확한 도메인 우선, 없으면 루트 도메인으로 재시도
+                source = DOMAIN_MAP.get(_dom)
+                if not source:
+                    _root = '.'.join(_dom.split('.')[-2:])
+                    source = DOMAIN_MAP.get(_root) or result.get("source", "")
 
             edu_type = result.get("edu_type", "기타")
             tag_cls  = EDU_TAGS.get(edu_type, "tag-edu-기타")
