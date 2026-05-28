@@ -47,7 +47,7 @@ HTML_HEAD = '''<!DOCTYPE html>
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>동아출판 교육 뉴스 브리프</title>
+<title>교육 뉴스 브리핑</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background:#f0f2f6; color:#1a1a2e; font-size:14px; line-height:1.6; }
