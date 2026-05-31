@@ -64,8 +64,8 @@ def find_articles(articles: list, query: str) -> list:
         topic_score = sum(1 for kw in topic_keywords if kw in text)
         org_match   = any(kw in art["edu"].lower() for kw in org_keywords)
 
-        # 토픽 키워드가 있는 쿼리면 토픽이 하나라도 매칭돼야 포함
-        if topic_keywords and topic_score == 0:
+        # 토픽 키워드가 있는 쿼리면 모든 토픽 키워드가 매칭돼야 포함
+        if topic_keywords and not all(kw in text for kw in topic_keywords):
             continue
 
         score = topic_score + sum(1 for kw in org_keywords if kw in text)
