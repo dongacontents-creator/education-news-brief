@@ -108,11 +108,21 @@ def is_compare_query(query: str) -> bool:
 def is_refine_query(query: str) -> bool:
     return any(w in query for w in REFINE_WORDS)
 
+# 접미어 전용 제거 목록 (접두어 불용어로는 쓰지 않음)
+SUFFIX_STRIPS = ['좀', '요', '이요', '들', '를', '을', '이', '가', '은', '는', '도', '만', '로', '으로']
+
 def _strip_stopword_suffix(kw: str) -> str:
-    """단어 끝에 붙은 불용어 제거: '공교육관련' → '공교육', '수능좀' → '수능'"""
-    for sw in STOPWORDS:
-        if kw.endswith(sw) and len(kw) > len(sw) + 1:
-            return kw[:-len(sw)]
+    """단어 끝 불용어/어미를 반복 제거: '공교육관련기사들좀' → '공교육'"""
+    all_suffixes = STOPWORDS + SUFFIX_STRIPS
+    while True:
+        stripped = False
+        for sw in all_suffixes:
+            if kw.endswith(sw) and len(kw) > len(sw) + 1:
+                kw = kw[:-len(sw)]
+                stripped = True
+                break
+        if not stripped:
+            break
     return kw
 
 def find_articles(articles: list, query: str, force_org: str = None) -> list:
