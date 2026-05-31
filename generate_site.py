@@ -224,8 +224,8 @@ async function sendChat(){
       addTextMsg(data.error, 'bot');
     } else {
       addTextMsg(data.answer, 'bot');
+      lastArticles = data.articles || [];
       if(data.articles && data.articles.length > 0){
-        lastArticles = data.articles;
         data.articles.forEach(a => addArticleCard(a));
       }
     }

@@ -39,19 +39,22 @@ REFINE_WORDS = ['추려', '골라', '중에서', '에서만', '만 모아', '만
 def is_refine_query(query: str) -> bool:
     return any(w in query for w in REFINE_WORDS)
 
-# 검색 의미 없는 불용어
-STOPWORDS = {
-    '기사', '찾아', '찾아줘', '모아', '모아줘', '알려줘', '알려', '보여줘', '보여',
-    '줘', '줄게', '관련', '대한', '관한', '있는', '있어', '어떤', '좀', '다',
-    '전부', '모두', '전체', '한번', '혹시', '뭐야', '뭐가', '뭔가', '뭐',
-}
+# 검색 의미 없는 불용어 (접두어 매칭 — "기사들", "찾아서" 등 변형도 제거)
+STOPWORDS = [
+    '기사', '찾아', '모아', '알려', '보여', '관련', '대한', '관한',
+    '있는', '있어', '어떤', '전부', '모두', '전체', '한번', '혹시',
+    '뭐야', '뭐가', '뭔가', '뭐', '줘', '줄게', '다',
+]
 # 기관명 키워드 판별용
 ORG_SUFFIXES = ('교육청', '교육부', '교육원')
+
+def _is_stopword(kw: str) -> bool:
+    return any(kw.startswith(sw) and len(kw) <= len(sw) + 2 for sw in STOPWORDS)
 
 def find_articles(articles: list, query: str) -> list:
     query_lower = query.lower()
     raw_keywords = re.findall(r'\S+', query_lower)
-    keywords = [kw for kw in raw_keywords if kw not in STOPWORDS and len(kw) >= 2]
+    keywords = [kw for kw in raw_keywords if not _is_stopword(kw) and len(kw) >= 2]
 
     # 기관명 키워드 vs 토픽 키워드 분리
     org_keywords   = [kw for kw in keywords if any(kw.endswith(s) or s in kw for s in ORG_SUFFIXES)]
