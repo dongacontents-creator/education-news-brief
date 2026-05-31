@@ -128,11 +128,15 @@ def _strip_stopword_suffix(kw: str) -> str:
 def find_articles(articles: list, query: str, force_org: str = None, limit: int = 5) -> list:
     query_lower = query.lower()
     raw_keywords = re.findall(r'\S+', query_lower)
-    keywords = [_strip_stopword_suffix(kw) for kw in raw_keywords if not _is_stopword(kw) and len(kw) >= 2]
-    keywords = [kw for kw in keywords if len(kw) >= 2]
 
-    org_keywords   = [kw for kw in keywords if any(kw.endswith(s) or s in kw for s in ORG_SUFFIXES)]
-    topic_keywords = [kw for kw in keywords if kw not in org_keywords]
+    # 기관명 키워드는 불용어 필터 예외 (교육부/교육청 등이 stopword에 걸리지 않도록)
+    org_keywords = [kw for kw in raw_keywords
+                    if any(kw.endswith(s) or s in kw for s in ORG_SUFFIXES) and len(kw) >= 2]
+
+    # 토픽 키워드: 불용어 제거 + 접미어 제거
+    topic_raw = [kw for kw in raw_keywords if kw not in org_keywords]
+    topic_keywords = [_strip_stopword_suffix(kw) for kw in topic_raw if not _is_stopword(kw) and len(kw) >= 2]
+    topic_keywords = [kw for kw in topic_keywords if len(kw) >= 2]
 
     # force_org: 비교 검색 시 특정 기관으로만 제한
     if force_org:
