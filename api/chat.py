@@ -108,10 +108,18 @@ def is_compare_query(query: str) -> bool:
 def is_refine_query(query: str) -> bool:
     return any(w in query for w in REFINE_WORDS)
 
+def _strip_stopword_suffix(kw: str) -> str:
+    """단어 끝에 붙은 불용어 제거: '공교육관련' → '공교육', '수능좀' → '수능'"""
+    for sw in STOPWORDS:
+        if kw.endswith(sw) and len(kw) > len(sw) + 1:
+            return kw[:-len(sw)]
+    return kw
+
 def find_articles(articles: list, query: str, force_org: str = None) -> list:
     query_lower = query.lower()
     raw_keywords = re.findall(r'\S+', query_lower)
-    keywords = [kw for kw in raw_keywords if not _is_stopword(kw) and len(kw) >= 2]
+    keywords = [_strip_stopword_suffix(kw) for kw in raw_keywords if not _is_stopword(kw) and len(kw) >= 2]
+    keywords = [kw for kw in keywords if len(kw) >= 2]
 
     org_keywords   = [kw for kw in keywords if any(kw.endswith(s) or s in kw for s in ORG_SUFFIXES)]
     topic_keywords = [kw for kw in keywords if kw not in org_keywords]
