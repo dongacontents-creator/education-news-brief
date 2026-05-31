@@ -146,17 +146,23 @@ CHATBOT_HTML = '''
 <style>
 #chatbot-btn{position:fixed;bottom:28px;right:28px;width:52px;height:52px;border-radius:50%;background:#1e40af;color:#fff;border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 16px rgba(30,64,175,.35);z-index:900;display:flex;align-items:center;justify-content:center;}
 #chatbot-btn:hover{background:#1d3c9e;}
-#chatbot-panel{position:fixed;bottom:90px;right:28px;width:360px;max-height:520px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.15);display:none;flex-direction:column;z-index:900;overflow:hidden;}
+#chatbot-panel{position:fixed;bottom:90px;right:28px;width:380px;max-height:560px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.15);display:none;flex-direction:column;z-index:900;overflow:hidden;}
 #chatbot-panel.open{display:flex;}
 #chatbot-header{background:#1e40af;color:#fff;padding:14px 16px;font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center;}
 #chatbot-close{background:none;border:none;color:#fff;font-size:18px;cursor:pointer;line-height:1;}
 #chatbot-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;}
-.chat-msg{max-width:85%;padding:9px 13px;border-radius:12px;font-size:13px;line-height:1.55;white-space:pre-wrap;word-break:break-word;}
+.chat-msg{max-width:90%;padding:9px 13px;border-radius:12px;font-size:13px;line-height:1.6;word-break:break-word;}
 .chat-msg.user{background:#1e40af;color:#fff;align-self:flex-end;border-bottom-right-radius:3px;}
 .chat-msg.bot{background:#f1f5f9;color:#1e293b;align-self:flex-start;border-bottom-left-radius:3px;}
 .chat-msg.loading{color:#94a3b8;font-style:italic;}
+.chat-article{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:11px 13px;display:flex;flex-direction:column;gap:6px;width:100%;}
+.chat-article-meta{font-size:11px;color:#94a3b8;}
+.chat-article-title{font-size:13px;font-weight:700;color:#1e293b;line-height:1.4;}
+.chat-article-summary{font-size:12px;color:#475569;line-height:1.55;}
+.chat-article-btn{display:inline-block;margin-top:2px;padding:5px 12px;background:#1e40af;color:#fff;border-radius:7px;font-size:11px;font-weight:600;text-decoration:none;align-self:flex-start;}
+.chat-article-btn:hover{background:#1d3c9e;}
 #chatbot-input-wrap{display:flex;padding:10px;gap:8px;border-top:1px solid #e5e7eb;}
-#chatbot-input{flex:1;border:1.5px solid #dde1ea;border-radius:10px;padding:8px 12px;font-size:13px;outline:none;resize:none;height:40px;}
+#chatbot-input{flex:1;border:1.5px solid #dde1ea;border-radius:10px;padding:8px 12px;font-size:13px;outline:none;height:40px;}
 #chatbot-input:focus{border-color:#1e40af;}
 #chatbot-send{background:#1e40af;color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;white-space:nowrap;}
 #chatbot-send:hover{background:#1d3c9e;}
@@ -195,11 +201,11 @@ async function sendChat(){
   if(!msg) return;
 
   const send = document.getElementById('chatbot-send');
-  addMsg(msg, 'user');
+  addTextMsg(msg, 'user');
   input.value = '';
   send.disabled = true;
 
-  const loading = addMsg('답변을 찾는 중...', 'bot loading');
+  const loading = addTextMsg('답변을 찾는 중...', 'bot loading');
 
   try {
     const res = await fetch(VERCEL_API, {
@@ -209,17 +215,25 @@ async function sendChat(){
     });
     const data = await res.json();
     loading.remove();
-    addMsg(data.answer || data.error || '오류가 발생했습니다.', 'bot');
+
+    if(data.error){
+      addTextMsg(data.error, 'bot');
+    } else {
+      addTextMsg(data.answer, 'bot');
+      if(data.articles && data.articles.length > 0){
+        data.articles.forEach(a => addArticleCard(a));
+      }
+    }
   } catch(e) {
     loading.remove();
-    addMsg('서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.', 'bot');
+    addTextMsg('서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.', 'bot');
   } finally {
     send.disabled = false;
     input.focus();
   }
 }
 
-function addMsg(text, cls){
+function addTextMsg(text, cls){
   const box = document.getElementById('chatbot-messages');
   const div = document.createElement('div');
   div.className = 'chat-msg ' + cls;
@@ -227,6 +241,19 @@ function addMsg(text, cls){
   box.appendChild(div);
   box.scrollTop = box.scrollHeight;
   return div;
+}
+
+function addArticleCard(a){
+  const box = document.getElementById('chatbot-messages');
+  const card = document.createElement('div');
+  card.className = 'chat-article';
+  card.innerHTML =
+    `<div class="chat-article-meta">${a.week} · ${a.edu} · ${a.meta}</div>` +
+    `<div class="chat-article-title">${a.title}</div>` +
+    `<div class="chat-article-summary">${a.summary}</div>` +
+    `<a class="chat-article-btn" href="${a.url}" target="_blank" rel="noopener">기사 바로가기 →</a>`;
+  box.appendChild(card);
+  box.scrollTop = box.scrollHeight;
 }
 </script>
 '''
