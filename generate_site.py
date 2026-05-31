@@ -99,12 +99,21 @@ body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background
 .news-card.hidden { display:none; }
 .card-tags { display:flex; flex-wrap:wrap; gap:5px; }
 .tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 9px; border-radius:8px; white-space:nowrap; }
-.tag-edu-교육부 { background:#eff6ff; color:#1d4ed8; }
-.tag-edu-업계동향 { background:#fefce8; color:#854d0e; border:1px solid #fde047; }
-.tag-edu-AI동향 { background:#f5f3ff; color:#6d28d9; border:1px solid #c4b5fd; }
+.tag-edu-교육부     { background:#eff6ff; color:#1d4ed8; }
+.tag-edu-교육정책   { background:#f0fdf4; color:#166534; border:1px solid #86efac; }
+.tag-edu-교육현장   { background:#fff7ed; color:#9a3412; border:1px solid #fdba74; }
+.tag-edu-교과서시장 { background:#f0f9ff; color:#0369a1; border:1px solid #7dd3fc; }
+.tag-edu-업계동향   { background:#fefce8; color:#854d0e; border:1px solid #fde047; }
+.tag-edu-AI동향     { background:#f5f3ff; color:#6d28d9; border:1px solid #c4b5fd; }
 .tag-official { background:#dcfce7; color:#166534; border:1px solid #86efac; }
 .tag-source { background:#f1f5f9; color:#475569; }
 .tag-topic { background:#f1f5f9; color:#64748b; }
+.filter-btn-policy { padding:6px 14px; border-radius:18px; border:1.5px solid #86efac; background:#f0fdf4; color:#166534; font-size:12px; font-weight:700; cursor:pointer; }
+.filter-btn-policy.active { background:#16a34a; border-color:#16a34a; color:#fff; }
+.filter-btn-field { padding:6px 14px; border-radius:18px; border:1.5px solid #fdba74; background:#fff7ed; color:#9a3412; font-size:12px; font-weight:700; cursor:pointer; }
+.filter-btn-field.active { background:#ea580c; border-color:#ea580c; color:#fff; }
+.filter-btn-textbook { padding:6px 14px; border-radius:18px; border:1.5px solid #7dd3fc; background:#f0f9ff; color:#0369a1; font-size:12px; font-weight:700; cursor:pointer; }
+.filter-btn-textbook.active { background:#0284c7; border-color:#0284c7; color:#fff; }
 .filter-btn-industry { padding:6px 14px; border-radius:18px; border:1.5px solid #fde047; background:#fefce8; color:#854d0e; font-size:12px; font-weight:700; cursor:pointer; }
 .filter-btn-industry.active { background:#ca8a04; border-color:#ca8a04; color:#fff; }
 .filter-btn-ai { padding:6px 14px; border-radius:18px; border:1.5px solid #c4b5fd; background:#f5f3ff; color:#6d28d9; font-size:12px; font-weight:700; cursor:pointer; }
@@ -319,7 +328,7 @@ function filterMonthSub(weekId, el) {
 
 function filterEdu(edu, el) {
   activeEdu = edu;
-  document.querySelectorAll('#edu-all-btn,#industry-btn,#ai-btn,#edu-dept-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#edu-all-btn,#policy-btn,#field-btn,#textbook-btn,#industry-btn,#ai-btn,#edu-dept-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.edu-sub-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   const dropBtn = document.getElementById('edu-drop-btn');
@@ -331,7 +340,7 @@ function filterEdu(edu, el) {
 
 function filterEduSub(edu, el) {
   activeEdu = edu;
-  document.querySelectorAll('#edu-all-btn,#industry-btn,#ai-btn,#edu-dept-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#edu-all-btn,#policy-btn,#field-btn,#textbook-btn,#industry-btn,#ai-btn,#edu-dept-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.edu-sub-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   const dropBtn = document.getElementById('edu-drop-btn');
@@ -460,10 +469,13 @@ def main():
         '<div class="filter-row" id="edu-row"><span class="filter-label">선택</span>'
         '<button class="filter-btn active" id="edu-all-btn" onclick="filterEdu(\'all\',this)">전체</button>'
         '<button class="filter-btn" id="edu-dept-btn" onclick="filterEdu(\'교육부\',this)">교육부</button>'
+        '<button class="filter-btn-policy" id="policy-btn" onclick="filterEdu(\'교육정책\',this)">📋 교육정책</button>'
+        '<button class="filter-btn-field" id="field-btn" onclick="filterEdu(\'교육현장\',this)">🏫 교육현장</button>'
+        '<button class="filter-btn-textbook" id="textbook-btn" onclick="filterEdu(\'교과서시장\',this)">📚 교과서시장</button>'
         '<div class="edu-dropdown-wrap"><button class="edu-dropdown-btn" id="edu-drop-btn" onclick="toggleEduPanel(this)">교육청 선택 <span class="arrow">▼</span></button>'
         '<div class="edu-sub-panel" id="edu-sub-panel"><div class="edu-sub-grid">' + edu_panel + '</div></div></div>'
         '<button class="filter-btn-industry" id="industry-btn" onclick="filterEdu(\'업계동향\',this)">📊 업계 동향</button>'
-                 '<button class="filter-btn-ai" id="ai-btn" onclick="filterEdu(\'AI동향\',this)">🤖 AI 동향</button></div></div>'
+        '<button class="filter-btn-ai" id="ai-btn" onclick="filterEdu(\'AI동향\',this)">🤖 AI 동향</button></div></div>'
         + wk_secs + '</div>' + MODAL_HTML + 
         '<script>const CARD_DATA = ' + json.dumps(all_cards, ensure_ascii=False) + ';' + JS_FUNCTIONS + '</script>'
         + CHATBOT_HTML + '</body></html>'
