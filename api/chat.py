@@ -130,15 +130,9 @@ def find_articles(articles: list, query: str, force_org: str = None) -> list:
         topic_score = sum(1 for kw in topic_keywords if kw in text)
         org_match   = any(kw in art["edu"].lower() for kw in org_keywords)
 
-        # 비교 검색(force_org): 첫 번째 키워드(핵심 주제) 필수 매칭, 나머지는 점수 보너스
-        # 일반 검색: 모든 토픽 키워드 AND
-        if topic_keywords:
-            if force_org:
-                if topic_keywords[0] not in text:
-                    continue
-            else:
-                if not all(kw in text for kw in topic_keywords):
-                    continue
+        # 비교/일반 검색 모두 모든 토픽 키워드 AND (불용어 제거 후 남은 구체적 단어들)
+        if topic_keywords and not all(kw in text for kw in topic_keywords):
+            continue
 
         score = topic_score + sum(1 for kw in org_keywords if kw in text)
         if org_match:
