@@ -39,18 +39,42 @@ REFINE_WORDS = ['추려', '골라', '중에서', '에서만', '만 모아', '만
 def is_refine_query(query: str) -> bool:
     return any(w in query for w in REFINE_WORDS)
 
+# 검색 의미 없는 불용어
+STOPWORDS = {
+    '기사', '찾아', '찾아줘', '모아', '모아줘', '알려줘', '알려', '보여줘', '보여',
+    '줘', '줄게', '관련', '대한', '관한', '있는', '있어', '어떤', '좀', '다',
+    '전부', '모두', '전체', '한번', '혹시', '뭐야', '뭐가', '뭔가', '뭐',
+}
+# 기관명 키워드 판별용
+ORG_SUFFIXES = ('교육청', '교육부', '교육원')
+
 def find_articles(articles: list, query: str) -> list:
     query_lower = query.lower()
-    keywords = re.findall(r'\S+', query_lower)
+    raw_keywords = re.findall(r'\S+', query_lower)
+    keywords = [kw for kw in raw_keywords if kw not in STOPWORDS and len(kw) >= 2]
+
+    # 기관명 키워드 vs 토픽 키워드 분리
+    org_keywords   = [kw for kw in keywords if any(kw.endswith(s) or s in kw for s in ORG_SUFFIXES)]
+    topic_keywords = [kw for kw in keywords if kw not in org_keywords]
+
     scored = []
     for art in articles:
         text = (art["title"] + art["summary"] + art["edu"] + art["week"]).lower()
-        score = sum(1 for kw in keywords if kw in text)
-        # edu 필드가 쿼리 키워드와 일치하면 가중치 추가
-        if any(kw in art["edu"].lower() for kw in keywords):
-            score += 3
+
+        topic_score = sum(1 for kw in topic_keywords if kw in text)
+        org_match   = any(kw in art["edu"].lower() for kw in org_keywords)
+
+        # 토픽 키워드가 있는 쿼리면 토픽이 하나라도 매칭돼야 포함
+        if topic_keywords and topic_score == 0:
+            continue
+
+        score = topic_score + sum(1 for kw in org_keywords if kw in text)
+        if org_match:
+            score += 3  # 기관 일치 가중치는 토픽 매칭이 확인된 후에만 적용
+
         if score > 0:
             scored.append((score, art))
+
     scored.sort(key=lambda x: -x[0])
     return [art for _, art in scored[:10]]
 
