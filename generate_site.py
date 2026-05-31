@@ -142,6 +142,95 @@ body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background
 </style>
 </head>'''
 
+CHATBOT_HTML = '''
+<style>
+#chatbot-btn{position:fixed;bottom:28px;right:28px;width:52px;height:52px;border-radius:50%;background:#1e40af;color:#fff;border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 16px rgba(30,64,175,.35);z-index:900;display:flex;align-items:center;justify-content:center;}
+#chatbot-btn:hover{background:#1d3c9e;}
+#chatbot-panel{position:fixed;bottom:90px;right:28px;width:360px;max-height:520px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.15);display:none;flex-direction:column;z-index:900;overflow:hidden;}
+#chatbot-panel.open{display:flex;}
+#chatbot-header{background:#1e40af;color:#fff;padding:14px 16px;font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center;}
+#chatbot-close{background:none;border:none;color:#fff;font-size:18px;cursor:pointer;line-height:1;}
+#chatbot-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;}
+.chat-msg{max-width:85%;padding:9px 13px;border-radius:12px;font-size:13px;line-height:1.55;white-space:pre-wrap;word-break:break-word;}
+.chat-msg.user{background:#1e40af;color:#fff;align-self:flex-end;border-bottom-right-radius:3px;}
+.chat-msg.bot{background:#f1f5f9;color:#1e293b;align-self:flex-start;border-bottom-left-radius:3px;}
+.chat-msg.loading{color:#94a3b8;font-style:italic;}
+#chatbot-input-wrap{display:flex;padding:10px;gap:8px;border-top:1px solid #e5e7eb;}
+#chatbot-input{flex:1;border:1.5px solid #dde1ea;border-radius:10px;padding:8px 12px;font-size:13px;outline:none;resize:none;height:40px;}
+#chatbot-input:focus{border-color:#1e40af;}
+#chatbot-send{background:#1e40af;color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;white-space:nowrap;}
+#chatbot-send:hover{background:#1d3c9e;}
+#chatbot-send:disabled{background:#94a3b8;cursor:not-allowed;}
+</style>
+
+<button id="chatbot-btn" onclick="toggleChat()" title="뉴스 검색 챗봇">💬</button>
+
+<div id="chatbot-panel">
+  <div id="chatbot-header">
+    <span>📚 교육 뉴스 검색</span>
+    <button id="chatbot-close" onclick="toggleChat()">✕</button>
+  </div>
+  <div id="chatbot-messages">
+    <div class="chat-msg bot">안녕하세요! 수집된 교육 뉴스에서 원하는 기사를 찾아드립니다.
+예) "5월 경기도교육청 돌봄 정책 기사 모아줘"</div>
+  </div>
+  <div id="chatbot-input-wrap">
+    <input id="chatbot-input" type="text" placeholder="질문을 입력하세요..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}">
+    <button id="chatbot-send" onclick="sendChat()">전송</button>
+  </div>
+</div>
+
+<script>
+const VERCEL_API = 'https://education-news-brief.vercel.app/api/chat';
+
+function toggleChat(){
+  const p = document.getElementById('chatbot-panel');
+  p.classList.toggle('open');
+  if(p.classList.contains('open')) document.getElementById('chatbot-input').focus();
+}
+
+async function sendChat(){
+  const input = document.getElementById('chatbot-input');
+  const msg = input.value.trim();
+  if(!msg) return;
+
+  const send = document.getElementById('chatbot-send');
+  addMsg(msg, 'user');
+  input.value = '';
+  send.disabled = true;
+
+  const loading = addMsg('답변을 찾는 중...', 'bot loading');
+
+  try {
+    const res = await fetch(VERCEL_API, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: msg}),
+    });
+    const data = await res.json();
+    loading.remove();
+    addMsg(data.answer || data.error || '오류가 발생했습니다.', 'bot');
+  } catch(e) {
+    loading.remove();
+    addMsg('서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.', 'bot');
+  } finally {
+    send.disabled = false;
+    input.focus();
+  }
+}
+
+function addMsg(text, cls){
+  const box = document.getElementById('chatbot-messages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg ' + cls;
+  div.textContent = text;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+  return div;
+}
+</script>
+'''
+
 MODAL_HTML = '''<div class="modal-backdrop" id="modal" onclick="if(event.target===this)closeModal()">
 <div class="modal-box">
 <button class="modal-close" onclick="closeModal()">✕</button>
@@ -336,7 +425,8 @@ def main():
         '<button class="filter-btn-industry" id="industry-btn" onclick="filterEdu(\'업계동향\',this)">📊 업계 동향</button>'
                  '<button class="filter-btn-ai" id="ai-btn" onclick="filterEdu(\'AI동향\',this)">🤖 AI 동향</button></div></div>'
         + wk_secs + '</div>' + MODAL_HTML + 
-        '<script>const CARD_DATA = ' + json.dumps(all_cards, ensure_ascii=False) + ';' + JS_FUNCTIONS + '</script></body></html>'
+        '<script>const CARD_DATA = ' + json.dumps(all_cards, ensure_ascii=False) + ';' + JS_FUNCTIONS + '</script>'
+        + CHATBOT_HTML + '</body></html>'
     )
     
     Path('index.html').write_text(final_html, encoding='utf-8')
