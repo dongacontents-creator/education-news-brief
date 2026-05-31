@@ -31,6 +31,12 @@ SYSTEM_PROMPT = """\
 - 답변은 한국어로, 친절하고 간결하게
 - 기사 목록이나 URL은 직접 출력하지 마세요 (별도로 표시됩니다)"""
 
+# 후속 필터 질문으로 판단하는 키워드
+REFINE_WORDS = ['추려', '골라', '중에서', '에서만', '만 모아', '만 추출', '필터', '제외', '빼고', '만 보여', '만 줘', '만줘']
+
+def is_refine_query(query: str) -> bool:
+    return any(w in query for w in REFINE_WORDS)
+
 def find_articles(articles: list, query: str) -> list:
     query_lower = query.lower()
     keywords = re.findall(r'\S+', query_lower)
@@ -38,6 +44,9 @@ def find_articles(articles: list, query: str) -> list:
     for art in articles:
         text = (art["title"] + art["summary"] + art["edu"] + art["week"]).lower()
         score = sum(1 for kw in keywords if kw in text)
+        # edu 필드가 쿼리 키워드와 일치하면 가중치 추가
+        if any(kw in art["edu"].lower() for kw in keywords):
+            score += 3
         if score > 0:
             scored.append((score, art))
     scored.sort(key=lambda x: -x[0])
@@ -65,14 +74,22 @@ class handler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", 0))
         body = json.loads(self.rfile.read(length))
         question = body.get("message", "").strip()
+        prev_articles = body.get("prev_articles", [])
 
         if not question:
             self._json(400, {"error": "질문을 입력해주세요."})
             return
 
         try:
-            articles = load_articles()
-            matched = find_articles(articles, question)
+            # 이전 기사 목록이 있고 후속 필터 질문이면 해당 범위 안에서만 검색
+            if prev_articles and is_refine_query(question):
+                matched = find_articles(prev_articles, question)
+                if not matched:
+                    matched = prev_articles  # 필터 결과 없으면 이전 전체 반환
+            else:
+                articles = load_articles()
+                matched = find_articles(articles, question)
+
             context = build_context(matched)
 
             completion = client.chat.completions.create(
@@ -86,7 +103,6 @@ class handler(BaseHTTPRequestHandler):
             )
             answer = completion.choices[0].message.content.strip()
 
-            # 기사 카드용 데이터 별도 반환
             article_cards = [
                 {
                     "week":    a["week"],

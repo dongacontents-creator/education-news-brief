@@ -197,6 +197,7 @@ CHATBOT_HTML = '''
 
 <script>
 const VERCEL_API = 'https://education-news-brief.vercel.app/api/chat';
+let lastArticles = [];
 
 function toggleChat(){
   const p = document.getElementById('chatbot-panel');
@@ -220,7 +221,7 @@ async function sendChat(){
     const res = await fetch(VERCEL_API, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({message: msg}),
+      body: JSON.stringify({message: msg, prev_articles: lastArticles}),
     });
     const data = await res.json();
     loading.remove();
@@ -230,6 +231,7 @@ async function sendChat(){
     } else {
       addTextMsg(data.answer, 'bot');
       if(data.articles && data.articles.length > 0){
+        lastArticles = data.articles;
         data.articles.forEach(a => addArticleCard(a));
       }
     }
