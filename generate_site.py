@@ -102,6 +102,9 @@ body { font-family: 'Apple SD Gothic Neo','Malgun Gothic',sans-serif; background
 .tag-edu-교육부 { background:#eff6ff; color:#1d4ed8; }
 .tag-edu-업계동향 { background:#fefce8; color:#854d0e; border:1px solid #fde047; }
 .tag-edu-AI동향 { background:#f5f3ff; color:#6d28d9; border:1px solid #c4b5fd; }
+.tag-official { background:#dcfce7; color:#166534; border:1px solid #86efac; }
+.tag-source { background:#f1f5f9; color:#475569; }
+.tag-topic { background:#f1f5f9; color:#64748b; }
 .filter-btn-industry { padding:6px 14px; border-radius:18px; border:1.5px solid #fde047; background:#fefce8; color:#854d0e; font-size:12px; font-weight:700; cursor:pointer; }
 .filter-btn-industry.active { background:#ca8a04; border-color:#ca8a04; color:#fff; }
 .filter-btn-ai { padding:6px 14px; border-radius:18px; border:1.5px solid #c4b5fd; background:#f5f3ff; color:#6d28d9; font-size:12px; font-weight:700; cursor:pointer; }

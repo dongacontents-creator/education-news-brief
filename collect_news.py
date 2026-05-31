@@ -7,7 +7,9 @@
 """
 
 import os, json, re, sys
+import xml.etree.ElementTree as ET
 import requests
+from html import unescape
 from groq import Groq
 from pathlib import Path
 from datetime import date, timedelta
@@ -45,6 +47,25 @@ QUERIES = [
     ("AI 디지털교과서 활용",      "AI동향"),
 ]
 
+# ── RSS 피드 정의 ─────────────────────────────────────────
+RSS_FEEDS = [
+    {
+        "url":             "https://www.korea.kr/rss/dept_moe.xml",
+        "source":          "교육부",
+        "edu_hint":        "교육부",
+        "filter_keywords": None,  # 교육부 전용 피드 → 전량 수집
+    },
+    {
+        "url":             "https://www.korea.kr/rss/pressrelease.xml",
+        "source":          "정책브리핑",
+        "edu_hint":        "교육부",
+        # 전 부처 보도자료 → 교육 관련만 필터링
+        "filter_keywords": ["교육", "학교", "교사", "학생", "교육부", "교육청",
+                            "입시", "수능", "교과서", "유아", "초등", "중학", "고교",
+                            "대학", "직업훈련", "평생교육", "특수교육"],
+    },
+]
+
 EDU_TAGS = {
     "교육부":               "tag-edu-교육부",
     "서울특별시교육청":     "tag-edu-서울특별시교육청",
@@ -68,6 +89,31 @@ EDU_TAGS = {
     "AI동향":               "tag-edu-AI동향",
     "기타":                 "tag-edu-기타",
 }
+
+def fetch_rss(url: str) -> list:
+    """RSS XML 피드를 파싱해 기사 dict 목록 반환 (Naver API items와 동일한 키 구조)."""
+    try:
+        resp = requests.get(url, timeout=15)
+        resp.raise_for_status()
+        root = ET.fromstring(resp.content)
+        items = []
+        for item in root.iter('item'):
+            def _t(tag, el=item):
+                node = el.find(tag)
+                return unescape(node.text or '').strip() if node is not None and node.text else ''
+            link = _t('link')
+            items.append({
+                "title":        _t('title'),
+                "link":         link,
+                "originallink": link,
+                "description":  _t('description'),
+                "pubDate":      _t('pubDate'),
+            })
+        print(f"    RSS 파싱 완료: {len(items)}건 ({url})")
+        return items
+    except Exception as e:
+        print(f"    RSS 수집 실패 ({url}): {e}")
+        return []
 
 def strip_tags(html: str) -> str:
     from html import unescape
@@ -324,6 +370,73 @@ def main():
 
             keywords.extend(result.get("keywords", []))
             print(f"    → 추가 완료 ({edu_type})")
+
+    # ── RSS 피드 수집 (네이버 API 이후 병렬 처리) ──────────────
+    print("\n[RSS 피드 수집 시작]")
+    for feed in RSS_FEEDS:
+        print(f"  피드: {feed['url']}")
+        articles = fetch_rss(feed["url"])
+        filter_kws = feed.get("filter_keywords")
+
+        for art in articles:
+            url   = art.get("link", "#")
+            title = strip_tags(art.get("title", ""))
+            desc  = strip_tags(art.get("description", ""))
+
+            if not title or url in seen_urls:
+                continue
+
+            # 전 부처 피드는 교육 관련 키워드 포함 기사만 처리
+            if filter_kws and not any(kw in title + desc for kw in filter_kws):
+                continue
+
+            seen_urls.add(url)
+
+            pub = art.get("pubDate", "")
+            try:
+                from email.utils import parsedate
+                t = parsedate(pub)
+                pub_str  = f"{t[0]}.{t[1]:02d}.{t[2]:02d}" if t else ""
+                pub_date = date(t[0], t[1], t[2]) if t else None
+            except Exception:
+                pub_str, pub_date = "", None
+
+            if pub_date and not (info["start"] <= pub_date <= info["end"]):
+                print(f"    → 날짜 범위 외 ({pub_str}), 스킵")
+                continue
+
+            print(f"    처리: {title[:40]}...")
+            result = ai_card(title, desc, url, feed["edu_hint"])
+            if not result or not result.get("relevant"):
+                print("    → 관련 없음, 스킵")
+                continue
+
+            edu_type = result.get("edu_type", "교육부")
+            tag_cls  = EDU_TAGS.get(edu_type, "tag-edu-기타")
+            source   = feed["source"]
+
+            tags = [
+                {"class": tag_cls,        "text": edu_type},
+                {"class": "tag-source",   "text": source},
+                {"class": "tag-official", "text": "공식보도자료"},
+            ]
+            if result.get("topic"):
+                tags.append({"class": "tag-topic", "text": result["topic"]})
+
+            cards.append({
+                "edu":           edu_type,
+                "tags":          tags,
+                "title":         title,
+                "meta":          f"{pub_str} · {source}",
+                "summary":       result.get("summary", desc[:100]),
+                "insight":       result.get("insight", ""),
+                "url":           url,
+                "points":        result.get("points", [desc]),
+                "lang":          "ko",
+                "has_translate": False,
+            })
+            keywords.extend(result.get("keywords", []))
+            print(f"    → 추가 완료 ({edu_type}, RSS)")
 
     if not cards:
         print("수집된 뉴스 없음 — 종료")
