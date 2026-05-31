@@ -125,7 +125,7 @@ def _strip_stopword_suffix(kw: str) -> str:
             break
     return kw
 
-def find_articles(articles: list, query: str, force_org: str = None) -> list:
+def find_articles(articles: list, query: str, force_org: str = None, limit: int = 5) -> list:
     query_lower = query.lower()
     raw_keywords = re.findall(r'\S+', query_lower)
     keywords = [_strip_stopword_suffix(kw) for kw in raw_keywords if not _is_stopword(kw) and len(kw) >= 2]
@@ -161,7 +161,7 @@ def find_articles(articles: list, query: str, force_org: str = None) -> list:
             scored.append((score, art))
 
     scored.sort(key=lambda x: -x[0])
-    return [art for _, art in scored[:5]]  # 비교 시 각 기관당 5개
+    return [art for _, art in scored[:limit]]
 
 def build_context(matched: list) -> str:
     if not matched:
@@ -212,7 +212,8 @@ class handler(BaseHTTPRequestHandler):
             if is_compare_query(question):
                 orgs = extract_orgs(question)
                 raw_keywords = re.findall(r'\S+', question.lower())
-                keywords = [kw for kw in raw_keywords if not _is_stopword(kw) and len(kw) >= 2]
+                keywords = [_strip_stopword_suffix(kw) for kw in raw_keywords if not _is_stopword(kw) and len(kw) >= 2]
+                keywords = [kw for kw in keywords if len(kw) >= 2]
                 topic_keywords = [kw for kw in keywords
                                   if not any(kw.endswith(s) or s in kw for s in ORG_SUFFIXES)]
 
@@ -231,26 +232,7 @@ class handler(BaseHTTPRequestHandler):
 
             # ── 일반 검색 ──────────────────────────────────────
             else:
-                matched = find_articles(articles, question)
-                # 일반 검색은 최대 10개
-                raw_keywords = re.findall(r'\S+', question.lower())
-                keywords = [kw for kw in raw_keywords if not _is_stopword(kw) and len(kw) >= 2]
-                org_keywords = [kw for kw in keywords if any(kw.endswith(s) or s in kw for s in ORG_SUFFIXES)]
-                topic_keywords = [kw for kw in keywords if kw not in org_keywords]
-                scored = []
-                for art in articles:
-                    text = (art["title"] + art["summary"] + art["edu"] + art["week"]).lower()
-                    if topic_keywords and not all(kw in text for kw in topic_keywords):
-                        continue
-                    topic_score = sum(1 for kw in topic_keywords if kw in text)
-                    org_match = any(kw in art["edu"].lower() for kw in org_keywords)
-                    score = topic_score + sum(1 for kw in org_keywords if kw in text)
-                    if org_match:
-                        score += 3
-                    if score > 0:
-                        scored.append((score, art))
-                scored.sort(key=lambda x: -x[0])
-                matched = [art for _, art in scored[:10]]
+                matched = find_articles(articles, question, limit=10)
                 context = build_context(matched)
                 system = SYSTEM_PROMPT
                 user_msg = f"질문: {question}\n\n관련 기사 데이터:\n{context}"
