@@ -72,24 +72,31 @@ def _is_stopword(kw: str) -> bool:
     return any(kw.startswith(sw) and len(kw) <= len(sw) + 2 for sw in STOPWORDS)
 
 def extract_orgs(query: str) -> list:
-    """쿼리에서 기관명 2개 이상 추출 (비교 질문 감지용)"""
+    """쿼리에서 기관명 추출 (줄임말/시 표기 변형 포함)"""
     found = [org for org in KNOWN_ORGS if org in query]
-    # 줄임말 처리: "경기교육청" → 경기도교육청, "서울교육청" → 서울특별시교육청
     aliases = {
-        '경기교육청': '경기도교육청', '서울교육청': '서울특별시교육청',
-        '인천교육청': '인천광역시교육청', '대전교육청': '대전광역시교육청',
-        '광주교육청': '광주광역시교육청', '대구교육청': '대구광역시교육청',
-        '울산교육청': '울산광역시교육청', '부산교육청': '부산광역시교육청',
-        '세종교육청': '세종특별자치시교육청', '강원교육청': '강원도교육청',
-        '충북교육청': '충청북도교육청', '충남교육청': '충청남도교육청',
-        '전북교육청': '전라북도교육청', '전남교육청': '전라남도교육청',
-        '경북교육청': '경상북도교육청', '경남교육청': '경상남도교육청',
+        '경기교육청': '경기도교육청',
+        '서울교육청': '서울특별시교육청', '서울시교육청': '서울특별시교육청',
+        '인천교육청': '인천광역시교육청', '인천시교육청': '인천광역시교육청',
+        '대전교육청': '대전광역시교육청', '대전시교육청': '대전광역시교육청',
+        '광주교육청': '광주광역시교육청', '광주시교육청': '광주광역시교육청',
+        '대구교육청': '대구광역시교육청', '대구시교육청': '대구광역시교육청',
+        '울산교육청': '울산광역시교육청', '울산시교육청': '울산광역시교육청',
+        '부산교육청': '부산광역시교육청', '부산시교육청': '부산광역시교육청',
+        '세종교육청': '세종특별자치시교육청',
+        '강원교육청': '강원도교육청',
+        '충북교육청': '충청북도교육청',
+        '충남교육청': '충청남도교육청',
+        '전북교육청': '전라북도교육청',
+        '전남교육청': '전라남도교육청',
+        '경북교육청': '경상북도교육청',
+        '경남교육청': '경상남도교육청',
         '제주교육청': '제주특별자치도교육청',
     }
     for alias, full in aliases.items():
         if alias in query and full not in found:
             found.append(full)
-    return list(dict.fromkeys(found))  # 중복 제거, 순서 유지
+    return list(dict.fromkeys(found))
 
 def is_compare_query(query: str) -> bool:
     has_compare_word = any(w in query for w in COMPARE_WORDS)
@@ -122,8 +129,14 @@ def find_articles(articles: list, query: str, force_org: str = None) -> list:
         topic_score = sum(1 for kw in topic_keywords if kw in text)
         org_match   = any(kw in art["edu"].lower() for kw in org_keywords)
 
-        if topic_keywords and not all(kw in text for kw in topic_keywords):
-            continue
+        # 비교 검색(force_org)은 OR, 일반 검색은 AND
+        if topic_keywords:
+            if force_org:
+                if topic_score == 0:
+                    continue
+            else:
+                if not all(kw in text for kw in topic_keywords):
+                    continue
 
         score = topic_score + sum(1 for kw in org_keywords if kw in text)
         if org_match:
