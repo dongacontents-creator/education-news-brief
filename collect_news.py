@@ -140,7 +140,7 @@ DOMAIN_MAP = {
     "m-economynews.com": "M이코노미뉴스", "m-i.kr": "매일일보",
     "sportsseoul.com": "스포츠서울", "stnsports.co.kr": "STN스포츠",
     "ibabynews.com": "베이비뉴스", "newslock.co.kr": "뉴스락",
-    "gosiweek.com": "고시위크", "lawissue.co.kr": "법률이슈",
+    "gosiweek.com": "피앤피뉴스", "lawissue.co.kr": "법률이슈",
     "christiantoday.co.kr": "크리스천투데이", "kpinews.kr": "KPI뉴스",
     "newsgn.com": "뉴스간보기", "newstnt.com": "뉴스TNT", "ttlnews.com": "TTL뉴스",
     "cwn.kr": "충청와이드뉴스", "siminilbo.co.kr": "시민일보",
