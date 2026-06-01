@@ -133,7 +133,7 @@ DOMAIN_MAP = {
     "newsis.com": "뉴시스", "news1.kr": "뉴스1", "newspim.com": "뉴스핌",
     "pressian.com": "프레시안", "mediatoday.co.kr": "미디어오늘", "yna.co.kr": "연합뉴스",
     "fnnews.com": "파이낸셜뉴스", "ddaily.co.kr": "디지털데일리", "ajunews.com": "아주경제",
-    "asiae.co.kr": "아시아경제", "etoday.co.kr": "이투데이", "viva100.com": "비바100",
+    "asiae.co.kr": "아시아경제", "etoday.co.kr": "이투데이", "viva100.com": "브릿지경제",
     "enewstoday.co.kr": "이뉴스투데이", "breaknews.com": "브레이크뉴스",
     "newstown.co.kr": "뉴스타운", "platum.kr": "플래텀", "hellot.net": "헬로티",
     "nongmin.com": "농민신문", "hansbiz.co.kr": "한스경제",
