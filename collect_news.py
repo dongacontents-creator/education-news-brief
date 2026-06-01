@@ -225,7 +225,6 @@ DOMAIN_MAP = {
     "gbe.kr": "경상북도교육청", "gne.go.kr": "경상남도교육청",
     "jje.go.kr": "제주특별자치도교육청",
     "korea.kr": "대한민국 정책브리핑",
-}
     "christiantoday.co.kr": "크리스천투데이", "kpinews.kr": "KPI뉴스",
     "newsgn.com": "뉴스간보기", "newstnt.com": "뉴스TNT", "ttlnews.com": "TTL뉴스",
     "cwn.kr": "충청와이드뉴스", "siminilbo.co.kr": "시민일보",
@@ -301,6 +300,17 @@ DOMAIN_MAP = {
     "gbe.kr": "경상북도교육청", "gne.go.kr": "경상남도교육청",
     "jje.go.kr": "제주특별자치도교육청",
     "korea.kr": "대한민국 정책브리핑",
+    "jinhak.jje.go.kr": "제주특별자치도교육청",
+    # 기타
+    "serii.re.kr": "서울교육연구정보원",
+    "sidae.com": "시대일보",
+    "megaeconomy.co.kr": "메가경제",
+    "dhnews.co.kr": "동한뉴스",
+    "lcnews.co.kr": "LC뉴스",
+    "spotvnews.co.kr": "스팟뉴스",
+    "vegannews.co.kr": "비건뉴스",
+    "dailysmart.co.kr": "데일리스마트",
+    "koreadaily.com": "미주한국일보",
 }
 
 def fetch_rss(url: str) -> list:
