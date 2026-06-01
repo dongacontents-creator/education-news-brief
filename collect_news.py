@@ -281,6 +281,9 @@ DOMAIN_MAP = {
     "joongboo.com": "중부일보", "mdilbo.com": "무등일보",
     "jjan.kr": "전라일보", "suwonilbo.kr": "수원일보",
     "ccnnews.co.kr": "CCN뉴스",
+    "headlinejeju.co.kr": "헤드라인제주", "jejudomin.co.kr": "제주도민일보",
+    "news.bbsi.co.kr": "BBS NEWS", "news.skbroadband.com": "Btv뉴스",
+    "journal.kobeta.com": "방송기술저널", "ccreview.co.kr": "충청뉴스",
     # 교육청 공식 사이트
     "sen.go.kr": "서울특별시교육청", "goe.go.kr": "경기도교육청",
     "ice.go.kr": "인천광역시교육청", "pen.go.kr": "부산광역시교육청",
