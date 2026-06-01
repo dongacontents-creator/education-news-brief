@@ -179,6 +179,34 @@ DOMAIN_MAP = {
     "jibs.co.kr": "JIBS제주방송", "dgmbc.com": "대구MBC",
     "mbceg.co.kr": "MBC경남", "web.ubc.co.kr": "울산방송",
     "news.ebs.co.kr": "EBS뉴스", "dazabi.com": "다자비",
+    # 방송·서브도메인
+    "news.sbs.co.kr": "SBS", "biz.sbs.co.kr": "SBS",
+    "view.asiae.co.kr": "아시아경제",
+    "daily.hankooki.com": "한국일보", "weekly.hankooki.com": "한국일보",
+    # 주요 뉴스
+    "nocutnews.co.kr": "노컷뉴스", "kmib.co.kr": "국민일보",
+    "wikitree.co.kr": "위키트리", "mydaily.co.kr": "마이데일리",
+    "newsworker.co.kr": "뉴스워커", "newsworks.co.kr": "뉴스웍스",
+    "datanews.co.kr": "데이터뉴스", "starnewskorea.com": "스타뉴스",
+    "pinpointnews.co.kr": "핀포인트뉴스", "tfmedia.co.kr": "더팩트",
+    "ekn.kr": "에너지경제신문", "g1tv.co.kr": "G1강원민방",
+    "dnews.co.kr": "대한경제", "cnbnews.com": "CNB뉴스",
+    "newscj.com": "천지일보", "ngonews.kr": "NGO뉴스",
+    "jejumaeil.net": "제주매일", "kbmaeil.com": "경북매일",
+    "joongboo.com": "중부일보", "mdilbo.com": "무등일보",
+    "jjan.kr": "전라일보", "suwonilbo.kr": "수원일보",
+    "ccnnews.co.kr": "CCN뉴스",
+    # 교육청 공식 사이트
+    "sen.go.kr": "서울특별시교육청", "goe.go.kr": "경기도교육청",
+    "ice.go.kr": "인천광역시교육청", "pen.go.kr": "부산광역시교육청",
+    "dge.go.kr": "대구광역시교육청", "dje.go.kr": "대전광역시교육청",
+    "gen.go.kr": "광주광역시교육청", "use.go.kr": "울산광역시교육청",
+    "sje.go.kr": "세종특별자치시교육청", "gwe.go.kr": "강원도교육청",
+    "cbe.go.kr": "충청북도교육청", "cne.go.kr": "충청남도교육청",
+    "jbe.go.kr": "전라북도교육청", "jne.go.kr": "전라남도교육청",
+    "gbe.kr": "경상북도교육청", "gne.go.kr": "경상남도교육청",
+    "jje.go.kr": "제주특별자치도교육청",
+    "korea.kr": "대한민국 정책브리핑",
 }
 
 def fetch_rss(url: str) -> list:
