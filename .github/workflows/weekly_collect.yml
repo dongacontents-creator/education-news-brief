@@ -9,6 +9,10 @@ on:
         description: '수집 기준 날짜 (YYYY-MM-DD, 빈칸=오늘)'
         required: false
         default: ''
+      filter_hint:
+        description: '특정 카테고리만 수집 (AI동향 / 업계동향 / 교육부 / 빈칸=전체)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -42,7 +46,12 @@ jobs:
           NAVER_CLIENT_ID:     ${{ secrets.NAVER_CLIENT_ID }}
           NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
           GROQ_API_KEY:        ${{ secrets.GROQ_API_KEY }}
-        run: python collect_news.py --date "${{ github.event.inputs.target_date }}"
+        run: |
+          ARGS="--date \"${{ github.event.inputs.target_date }}\""
+          if [ -n "${{ github.event.inputs.filter_hint }}" ]; then
+            ARGS="$ARGS --filter-hint \"${{ github.event.inputs.filter_hint }}\""
+          fi
+          eval python collect_news.py $ARGS
 
       - name: data/weeks.json 커밋
         id: commit

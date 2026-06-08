@@ -526,10 +526,12 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--date", default="", help="YYYY-MM-DD")
+    parser.add_argument("--filter-hint", default="", help="특정 edu_hint만 수집 (예: AI동향). 기존 주차에 이어붙이기 가능.")
     args = parser.parse_args()
-    ref_date = date.fromisoformat(args.date) if args.date else None
-    data_path = Path("data/weeks.json")
-    data = load_weeks_json(data_path)
+    ref_date    = date.fromisoformat(args.date) if args.date else None
+    filter_hint = args.filter_hint.strip()
+    data_path   = Path("data/weeks.json")
+    data        = load_weeks_json(data_path)
 
     seen_urls = {
         card["url"]
@@ -537,21 +539,33 @@ def main():
         for card in w["cards"]
     }
 
-    last_num = max(int(w["id"][1:]) for w in data["weeks"])
-    new_id   = f"w{last_num + 1}"
     info = week_info(ref_date)
+    existing_weeks = [w for w in data["weeks"] if w["badge"] == info["badge"] and w["date"] == info["date"]]
 
-    existing = [w for w in data["weeks"] if w["badge"] == info["badge"] and w["date"] == info["date"]]
-    if existing:
-        print(f"이미 수집된 주차: {info['badge']} ({info['date']}) — 종료")
-        sys.exit(0)
-
-    print(f"수집 시작: {new_id} ({info['badge']}) {info['date']}")
+    if existing_weeks:
+        if filter_hint:
+            # 이어붙이기 모드: 기존 주차에 추가
+            target_week = existing_weeks[0]
+            new_id = target_week["id"]
+            print(f"이어붙이기 모드: {new_id} ({info['badge']}) — {filter_hint} 쿼리만 추가")
+        else:
+            print(f"이미 수집된 주차: {info['badge']} ({info['date']}) — 종료")
+            sys.exit(0)
+    else:
+        last_num = max(int(w["id"][1:]) for w in data["weeks"])
+        new_id   = f"w{last_num + 1}"
+        target_week = None
+        print(f"수집 시작: {new_id} ({info['badge']}) {info['date']}")
 
     cards    = []
     keywords = []
 
-    for query, edu_hint in QUERIES:
+    active_queries = [
+        (q, h) for q, h in QUERIES
+        if not filter_hint or h == filter_hint
+    ]
+
+    for query, edu_hint in active_queries:
         print(f"  검색: {query}")
         try:
             articles = naver_search(query)
@@ -638,8 +652,13 @@ def main():
         break
 
     # ── RSS 피드 수집 (네이버 API 이후 병렬 처리) ──────────────
+    if filter_hint:
+        print(f"\n[RSS 피드 수집 건너뜀 — filter-hint={filter_hint}]")
+        active_feeds = []
+    else:
+        active_feeds = RSS_FEEDS
     print("\n[RSS 피드 수집 시작]")
-    for feed in RSS_FEEDS:
+    for feed in active_feeds:
         print(f"  피드: {feed['url']}")
         articles = fetch_rss(feed["url"])
         filter_kws = feed.get("filter_keywords")
@@ -738,20 +757,28 @@ def main():
     print("  주간 인사이트 생성 중...")
     weekly_insight = ai_weekly_insight(cards)
 
-    new_week = {
-        "id":             new_id,
-        "badge":          info["badge"],
-        "date":           info["date"],
-        "keywords":       kw_final,
-        "weekly_insight": weekly_insight,
-        "cards":          cards,
-    }
-
-    data["weeks"].append(new_week)
-    data_path.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
-    print(f"\n완료: {new_id} ({info['badge']}) — {len(cards)}개 카드 추가")
+    if target_week:
+        # 이어붙이기: 기존 주차에 카드 추가
+        target_week["cards"].extend(cards)
+        target_week["keywords"] = list(dict.fromkeys(target_week.get("keywords", []) + kw_final))[:5]
+        data_path.write_text(
+            json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        print(f"\n완료: {new_id} ({info['badge']}) — {len(cards)}개 카드 이어붙임 (총 {len(target_week['cards'])}개)")
+    else:
+        new_week = {
+            "id":             new_id,
+            "badge":          info["badge"],
+            "date":           info["date"],
+            "keywords":       kw_final,
+            "weekly_insight": weekly_insight,
+            "cards":          cards,
+        }
+        data["weeks"].append(new_week)
+        data_path.write_text(
+            json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        print(f"\n완료: {new_id} ({info['badge']}) — {len(cards)}개 카드 추가")
 
 
 if __name__ == "__main__":
