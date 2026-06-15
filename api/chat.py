@@ -108,6 +108,53 @@ def is_compare_query(query: str) -> bool:
 def is_refine_query(query: str) -> bool:
     return any(w in query for w in REFINE_WORDS)
 
+# 주요 이슈 키워드 질문 감지
+KEYWORD_TREND_WORDS = ['키워드', '이슈', '주요 이슈', '트렌드', '많이 나온', '자주 나온', '주요 키워드', '이슈 키워드']
+
+def is_keyword_trend_query(query: str) -> bool:
+    return any(w in query for w in KEYWORD_TREND_WORDS)
+
+def extract_keyword_trends(articles: list, query: str) -> str:
+    """기사 데이터에서 주요 키워드 빈도를 분석해 순위를 반환"""
+    # 질문에서 기간 감지 (예: 3월부터 5월, 1월~3월 등)
+    month_range_match = re.search(r'(\d+)월[부터에서]*\s*(\d+)월', query)
+
+    target_articles = articles
+    period_desc = ""
+
+    if month_range_match:
+        start_m = int(month_range_match.group(1))
+        end_m = int(month_range_match.group(2))
+        # week badge 예: "3월 1주차" 형태 가정
+        target_articles = [
+            a for a in articles
+            if re.search(r'(\d+)월', a.get("week", "")) and
+               start_m <= int(re.search(r'(\d+)월', a["week"]).group(1)) <= end_m
+        ]
+        period_desc = f"{start_m}월 1주부터 {end_m}월 마지막 주차까지"
+    else:
+        period_desc = "전체 기간"
+
+    # 기사 제목+요약에서 의미 있는 단어 빈도 집계
+    # 미리 정의한 주요 교육 키워드 목록으로 카운트
+    TOPIC_KEYWORDS = [
+        'AI 교육', '인공지능', '교육감', '교육감 선거', '교권 보호', '교권', '돌봄', '방과후', '늘봄',
+        '학교폭력', '기초학력', '디지털교육', '특수교육', '학생인권', '교육개혁', '입시',
+        '수능', '대입', '교육과정', '사교육', '공교육', '예산', '교원', '교사', '학부모',
+    ]
+
+    counts = {}
+    for kw in TOPIC_KEYWORDS:
+        cnt = sum(1 for a in target_articles if kw in a.get("title", "") + a.get("summary", ""))
+        if cnt > 0:
+            counts[kw] = cnt
+
+    if not counts:
+        return None, period_desc, []
+
+    ranked = sorted(counts.items(), key=lambda x: -x[1])[:10]
+    return ranked, period_desc, target_articles
+
 # 접미어 전용 제거 목록 (접두어 불용어로는 쓰지 않음)
 SUFFIX_STRIPS = ['좀', '요', '이요', '들', '를', '을', '이', '가', '은', '는', '도', '만', '로', '으로']
 
@@ -211,6 +258,17 @@ class handler(BaseHTTPRequestHandler):
 
         try:
             articles = load_articles()
+
+            # ── 키워드 트렌드 질문 ─────────────────────────────
+            if is_keyword_trend_query(question):
+                ranked, period_desc, _ = extract_keyword_trends(articles, question)
+                if ranked:
+                    lines = [f"{i+1}위 {kw}({cnt}회 노출)" for i, (kw, cnt) in enumerate(ranked)]
+                    answer = f"{period_desc}의 교육 뉴스 주요 키워드를 말씀드립니다.\n" + ", ".join(lines)
+                else:
+                    answer = f"{period_desc}에 해당하는 기사 데이터가 없어 키워드를 분석하기 어렵습니다."
+                self._json(200, {"answer": answer, "articles": []})
+                return
 
             # ── 비교 질문 ──────────────────────────────────────
             if is_compare_query(question):

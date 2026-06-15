@@ -180,9 +180,8 @@ CHATBOT_HTML = '''
     <button id="chatbot-close" onclick="toggleChat()">✕</button>
   </div>
   <div id="chatbot-messages">
-    <div class="chat-msg bot">안녕하세요! 수집된 교육 뉴스에서 원하는 기사를 찾아드립니다.
-예) "5월 경기도교육청 돌봄 정책 기사 모아줘"
-예) "서울특별시교육청과 경기도교육청의 AI 정책 비교해줘"</div>
+    <div class="chat-msg bot">안녕하세요! 교육 뉴스 브리핑 챗봇입니다. 무엇을 도와드릴까요?
+예) "5월 경기도교육청 돌봄 정책 기사 모아줘", "서울특별시교육청과 경기도교육청의 AI 정책 비교해줘"</div>
   </div>
   <div id="chatbot-input-wrap">
     <input id="chatbot-input" type="text" placeholder="질문을 입력하세요..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}">
