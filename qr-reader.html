@@ -10633,10 +10633,15 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
     }
 
     // 1순위: 브라우저 내장 BarcodeDetector (디자인 QR, 원형 점 스타일도 인식)
+    // canvas로 전달해서 blob URL 의존성 제거
     if ('BarcodeDetector' in window) {
       try {
         const detector = new BarcodeDetector({ formats: ['qr_code'] });
-        const barcodes = await detector.detect(imgEl);
+        const cvs = document.createElement('canvas');
+        cvs.width = w;
+        cvs.height = h;
+        cvs.getContext('2d').drawImage(imgEl, 0, 0, w, h);
+        const barcodes = await detector.detect(cvs);
         if (barcodes.length > 0) {
           showResult(barcodes[0].rawValue);
           return;
@@ -10664,8 +10669,8 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
     const url = URL.createObjectURL(blob);
     previewWrap.style.display = 'block';
 
-    preview.onload = () => {
-      decodeQR(preview);
+    preview.onload = async () => {
+      await decodeQR(preview);
       URL.revokeObjectURL(url);
     };
     preview.onerror = () => {
