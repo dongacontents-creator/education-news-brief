@@ -441,6 +441,7 @@
     openUrl = '';
     reset();
     resultBox.style.display = 'block';
+    setTimeout(() => resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
 
     if (isURL(text)) {
       openUrl = text;
@@ -473,6 +474,7 @@
     reset();
     errorBox.style.display = 'flex';
     errorMsg.textContent = msg;
+    setTimeout(() => errorBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
   }
 
   function copyResult() {
@@ -495,17 +497,48 @@
   }
 
   function decodeQR(imgEl) {
+    const w = imgEl.naturalWidth || imgEl.width;
+    const h = imgEl.naturalHeight || imgEl.height;
+
+    if (!w || !h) {
+      showError('이미지 크기를 읽을 수 없습니다. 다시 시도해 주세요.');
+      return;
+    }
+
+    // jsQR 라이브러리 로드 확인
+    if (typeof jsQR === 'undefined') {
+      showError('QR 인식 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침 해주세요.');
+      return;
+    }
+
     const canvas = document.createElement('canvas');
-    canvas.width = imgEl.naturalWidth;
-    canvas.height = imgEl.naturalHeight;
+    canvas.width = w;
+    canvas.height = h;
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(imgEl, 0, 0);
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(imgEl, 0, 0, w, h);
+    const imageData = ctx.getImageData(0, 0, w, h);
     const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+
     if (code && code.data) {
       showResult(code.data);
+      return;
+    }
+
+    // 인식 실패 시 2배 확대 후 재시도 (작은 이미지 대응)
+    const scale = 2;
+    const canvas2 = document.createElement('canvas');
+    canvas2.width = w * scale;
+    canvas2.height = h * scale;
+    const ctx2 = canvas2.getContext('2d');
+    ctx2.imageSmoothingEnabled = false;
+    ctx2.drawImage(imgEl, 0, 0, w * scale, h * scale);
+    const imageData2 = ctx2.getImageData(0, 0, canvas2.width, canvas2.height);
+    const code2 = jsQR(imageData2.data, imageData2.width, imageData2.height, { inversionAttempts: 'attemptBoth' });
+
+    if (code2 && code2.data) {
+      showResult(code2.data);
     } else {
-      showError('QR 코드를 인식하지 못했습니다. 더 선명한 이미지로 다시 시도해 주세요.');
+      showError('QR 코드를 인식하지 못했습니다. 이미지가 더 선명하거나 여백이 충분한지 확인해 주세요.');
     }
   }
 
@@ -518,7 +551,6 @@
     const url = URL.createObjectURL(blob);
     previewWrap.style.display = 'block';
 
-    // onload를 src 설정보다 먼저 등록해야 캐시된 이미지도 정상 처리됨
     preview.onload = () => {
       decodeQR(preview);
       URL.revokeObjectURL(url);
