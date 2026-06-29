@@ -10598,30 +10598,90 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
     });
   }
 
+  // 원형 점 스타일 QR 대응: 그레이스케일 → 이진화 → 팽창(dilation)
+  function dilateImageData(imageData, radius) {
+    const { data, width: w, height: h } = imageData;
+    const gray = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+      gray[i] = Math.round(0.299 * data[i*4] + 0.587 * data[i*4+1] + 0.114 * data[i*4+2]);
+    }
+    // Otsu 임계값
+    const hist = new Array(256).fill(0);
+    gray.forEach(v => hist[v]++);
+    const total = w * h;
+    let sum = 0;
+    for (let i = 0; i < 256; i++) sum += i * hist[i];
+    let sumB = 0, wB = 0, max = 0, threshold = 128;
+    for (let t = 0; t < 256; t++) {
+      wB += hist[t];
+      if (!wB) continue;
+      const wF = total - wB;
+      if (!wF) break;
+      sumB += t * hist[t];
+      const mB = sumB / wB, mF = (sum - sumB) / wF;
+      const between = wB * wF * (mB - mF) ** 2;
+      if (between > max) { max = between; threshold = t; }
+    }
+    // 이진화 (어두운 픽셀 = 0)
+    const binary = new Uint8Array(w * h);
+    for (let i = 0; i < gray.length; i++) binary[i] = gray[i] <= threshold ? 0 : 1;
+    // 팽창: 점 주변 빈 공간 채우기
+    const dilated = binary.slice();
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        if (binary[y * w + x] === 0) {
+          for (let dy = -radius; dy <= radius; dy++) {
+            for (let dx = -radius; dx <= radius; dx++) {
+              const ny = y + dy, nx = x + dx;
+              if (ny >= 0 && ny < h && nx >= 0 && nx < w) dilated[ny * w + nx] = 0;
+            }
+          }
+        }
+      }
+    }
+    const result = new ImageData(w, h);
+    for (let i = 0; i < w * h; i++) {
+      const v = dilated[i] === 0 ? 0 : 255;
+      result.data[i*4] = v; result.data[i*4+1] = v;
+      result.data[i*4+2] = v; result.data[i*4+3] = 255;
+    }
+    return result;
+  }
+
   function decodeWithJsQR(imgEl) {
     const w = imgEl.naturalWidth || imgEl.width;
     const h = imgEl.naturalHeight || imgEl.height;
     if (!w || !h || typeof jsQR === 'undefined') return null;
 
-    const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(imgEl, 0, 0, w, h);
-    const imageData = ctx.getImageData(0, 0, w, h);
-    const code = jsQR(imageData.data, w, h, { inversionAttempts: 'attemptBoth' });
-    if (code && code.data) return code.data;
+    const makeCanvas = (sw, sh) => {
+      const c = document.createElement('canvas');
+      c.width = sw; c.height = sh;
+      return c;
+    };
 
-    // 2배 확대 재시도 (작은 이미지 대응)
-    const canvas2 = document.createElement('canvas');
-    canvas2.width = w * 2;
-    canvas2.height = h * 2;
-    const ctx2 = canvas2.getContext('2d');
-    ctx2.imageSmoothingEnabled = false;
-    ctx2.drawImage(imgEl, 0, 0, w * 2, h * 2);
-    const imageData2 = ctx2.getImageData(0, 0, w * 2, h * 2);
-    const code2 = jsQR(imageData2.data, w * 2, h * 2, { inversionAttempts: 'attemptBoth' });
-    return (code2 && code2.data) ? code2.data : null;
+    // 시도 1: 원본 이미지
+    const c1 = makeCanvas(w, h);
+    const ctx1 = c1.getContext('2d');
+    ctx1.drawImage(imgEl, 0, 0, w, h);
+    const d1 = ctx1.getImageData(0, 0, w, h);
+    const r1 = jsQR(d1.data, w, h, { inversionAttempts: 'attemptBoth' });
+    if (r1 && r1.data) return r1.data;
+
+    // 시도 2: 팽창 필터 적용 (원형 점 스타일 QR 대응)
+    const dilated = dilateImageData(d1, 2);
+    const r2 = jsQR(dilated.data, w, h, { inversionAttempts: 'attemptBoth' });
+    if (r2 && r2.data) return r2.data;
+
+    // 시도 3: 2배 확대 후 팽창 필터
+    const c3 = makeCanvas(w * 2, h * 2);
+    const ctx3 = c3.getContext('2d');
+    ctx3.imageSmoothingEnabled = false;
+    ctx3.drawImage(imgEl, 0, 0, w * 2, h * 2);
+    const d3 = dilateImageData(ctx3.getImageData(0, 0, w * 2, h * 2), 3);
+    const r3 = jsQR(d3.data, w * 2, h * 2, { inversionAttempts: 'attemptBoth' });
+    if (r3 && r3.data) return r3.data;
+
+    return null;
   }
 
   async function decodeQR(imgEl) {
@@ -10656,7 +10716,7 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
     if (result) {
       showResult(result);
     } else {
-      showError('QR 코드를 인식하지 못했습니다. 원형 점 스타일 QR은 Chrome/Edge에서 더 잘 인식됩니다.');
+      showError('QR 코드를 인식하지 못했습니다. 더 선명하거나 여백이 있는 이미지로 다시 시도해 주세요.');
     }
   }
 
