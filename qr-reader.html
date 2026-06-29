@@ -10598,20 +10598,10 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
     });
   }
 
-  function decodeQR(imgEl) {
+  function decodeWithJsQR(imgEl) {
     const w = imgEl.naturalWidth || imgEl.width;
     const h = imgEl.naturalHeight || imgEl.height;
-
-    if (!w || !h) {
-      showError('이미지 크기를 읽을 수 없습니다. 다시 시도해 주세요.');
-      return;
-    }
-
-    // jsQR 라이브러리 로드 확인
-    if (typeof jsQR === 'undefined') {
-      showError('QR 인식 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하고 새로고침 해주세요.');
-      return;
-    }
+    if (!w || !h || typeof jsQR === 'undefined') return null;
 
     const canvas = document.createElement('canvas');
     canvas.width = w;
@@ -10619,28 +10609,49 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
     const ctx = canvas.getContext('2d');
     ctx.drawImage(imgEl, 0, 0, w, h);
     const imageData = ctx.getImageData(0, 0, w, h);
-    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' });
+    const code = jsQR(imageData.data, w, h, { inversionAttempts: 'attemptBoth' });
+    if (code && code.data) return code.data;
 
-    if (code && code.data) {
-      showResult(code.data);
+    // 2배 확대 재시도 (작은 이미지 대응)
+    const canvas2 = document.createElement('canvas');
+    canvas2.width = w * 2;
+    canvas2.height = h * 2;
+    const ctx2 = canvas2.getContext('2d');
+    ctx2.imageSmoothingEnabled = false;
+    ctx2.drawImage(imgEl, 0, 0, w * 2, h * 2);
+    const imageData2 = ctx2.getImageData(0, 0, w * 2, h * 2);
+    const code2 = jsQR(imageData2.data, w * 2, h * 2, { inversionAttempts: 'attemptBoth' });
+    return (code2 && code2.data) ? code2.data : null;
+  }
+
+  async function decodeQR(imgEl) {
+    const w = imgEl.naturalWidth || imgEl.width;
+    const h = imgEl.naturalHeight || imgEl.height;
+    if (!w || !h) {
+      showError('이미지 크기를 읽을 수 없습니다. 다시 시도해 주세요.');
       return;
     }
 
-    // 인식 실패 시 2배 확대 후 재시도 (작은 이미지 대응)
-    const scale = 2;
-    const canvas2 = document.createElement('canvas');
-    canvas2.width = w * scale;
-    canvas2.height = h * scale;
-    const ctx2 = canvas2.getContext('2d');
-    ctx2.imageSmoothingEnabled = false;
-    ctx2.drawImage(imgEl, 0, 0, w * scale, h * scale);
-    const imageData2 = ctx2.getImageData(0, 0, canvas2.width, canvas2.height);
-    const code2 = jsQR(imageData2.data, imageData2.width, imageData2.height, { inversionAttempts: 'attemptBoth' });
+    // 1순위: 브라우저 내장 BarcodeDetector (디자인 QR, 원형 점 스타일도 인식)
+    if ('BarcodeDetector' in window) {
+      try {
+        const detector = new BarcodeDetector({ formats: ['qr_code'] });
+        const barcodes = await detector.detect(imgEl);
+        if (barcodes.length > 0) {
+          showResult(barcodes[0].rawValue);
+          return;
+        }
+      } catch (e) {
+        // BarcodeDetector 실패 시 jsQR로 폴백
+      }
+    }
 
-    if (code2 && code2.data) {
-      showResult(code2.data);
+    // 2순위: jsQR (표준 QR 코드)
+    const result = decodeWithJsQR(imgEl);
+    if (result) {
+      showResult(result);
     } else {
-      showError('QR 코드를 인식하지 못했습니다. 이미지가 더 선명하거나 여백이 충분한지 확인해 주세요.');
+      showError('QR 코드를 인식하지 못했습니다. 원형 점 스타일 QR은 Chrome/Edge에서 더 잘 인식됩니다.');
     }
   }
 
